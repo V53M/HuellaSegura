@@ -17,6 +17,7 @@ export const api = {
   recorrido: (id, horas = 6) => pedir(`/adopciones/${id}/recorrido?horas=${horas}`),
   crearAdopcion: (datos) => pedir('/adopciones', { method: 'POST', body: datos }),
   guardarZona: (id, zona) => pedir(`/adopciones/${id}/zona`, { method: 'PUT', body: zona }),
+  geocodificar: (q) => pedir(`/geocodificar?${new URLSearchParams({ q })}`),
   declararExcepcion: (id, motivo, duracion_min) =>
     pedir(`/adopciones/${id}/excepciones`, { method: 'POST', body: { motivo, duracion_min } }),
   alertas: (abiertas) => pedir(`/alertas${abiertas ? '?abiertas=1' : ''}`),

@@ -108,7 +108,10 @@ export default function App() {
               <div className="panel-cabecera">
                 <h2>Zona segura de {nombreDe(panel.id)}</h2>
               </div>
-              <EditorZona zona={zona} onCambio={setZona} errorM={parametros?.error_m_respaldo} />
+              <EditorZona
+                zona={zona} onCambio={setZona} errorM={parametros?.error_m_respaldo} onEnfocar={setEnfoque}
+                direccionSugerida={seguimiento.find((x) => x.adopcion_id === panel.id)?.direccion}
+              />
               <div className="grupo-botones">
                 <button className="boton primario" onClick={guardarZona} disabled={zona.lat == null}>Guardar zona</button>
                 <button className="boton fantasma" onClick={() => { setZona(null); setPanel({ modo: 'detalle', id: panel.id }); }}>Cancelar</button>
@@ -117,7 +120,7 @@ export default function App() {
           )}
           {panel.modo === 'nueva' && (
             <NuevaAdopcion
-              zona={zona} onZona={setZona} parametros={parametros}
+              zona={zona} onZona={setZona} parametros={parametros} onEnfocar={setEnfoque}
               onCreada={(id) => { setZona(null); setPanel({ modo: 'detalle', id }); }}
               onCancelar={() => { setZona(null); setPanel({ modo: 'lista' }); }}
             />

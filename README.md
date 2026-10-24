@@ -69,6 +69,23 @@ npm test        # escenarios del motor sobre trazas sintéticas, con cobertura
 | Web de la fundación | `web/` | Mapa en vivo, alta de adopciones, editor de zona, expediente, bandeja de alertas, parámetros |
 | Simulador | `simulador/simular.js` | 7 escenarios |
 
+### Ubicar la zona segura por dirección
+Al crear una adopción o editar la zona, se puede escribir la dirección del adoptante (`Cra 32A # 12-34`) o
+unas coordenadas (`3.4516, -76.5320`) en lugar de marcar el punto en el mapa
+(`backend/src/geocodificacion/`, endpoint `GET /api/geocodificar?q=`).
+
+- Una dirección colombiana se ubica por el **cruce de las dos vías** (Carrera 32A con Calle 12), porque el
+  nombre de una vía sola se repite en varios barrios de Cali. Si trae placa (`-34`), se avanzan esos metros
+  hacia la siguiente vía cruzada.
+- El cruce se calcula con la geometría de Nominatim (1–5 s). Si no aparece, se consulta Overpass, que es más
+  completo pero a veces tarda 30–45 s.
+- Si el cruce existe en varios lugares (p. ej. Cali y Yumbo), la web muestra cada opción con su barrio.
+- El sufijo cardinal cuenta: «Calle 5 Oeste» y «Calle 5» son vías distintas.
+- Es una ayuda, no una verdad: la fundación debe confirmar el punto y puede ajustarlo con un clic en el mapa.
+- Usa los servicios gratuitos de OpenStreetMap, que piden no más de una consulta por segundo, identificarse y
+  guardar en caché (todo eso lo hace el backend). Para el piloto conviene poner un correo en
+  `GEOCODIFICACION_CONTACTO`.
+
 ### Decisiones del motor que conviene validar con el director
 - **El umbral sigue contando sin señal.** Si el animal salió y el collar se apagó, la alerta igual se genera (queda
   registrada con la causa `UMBRAL_SUPERADO_SIN_SEÑAL`).

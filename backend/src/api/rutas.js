@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { consulta, enTransaccion } from '../db/db.js';
 import { bus } from '../eventos.js';
 import { eventoManual } from '../motor/servicio.js';
+import { ErrorGeocodificacion, geocodificar } from '../geocodificacion/geocodificacion.js';
 
 export const api = Router();
 const FUNDACION_ID = Number(process.env.FUNDACION_ID ?? 1);
@@ -196,6 +197,17 @@ api.put('/adopciones/:id/zona', manejar(async (req) => {
   );
   bus.emit('seguimiento', { adopcionId: id });
   return { ok: true };
+}));
+
+// Ubicar la zona segura escribiendo la dirección del adoptante (o coordenadas) en vez de marcarla en el mapa.
+api.get('/geocodificar', manejar(async (req) => {
+  try {
+    return await geocodificar(req.query.q);
+  } catch (err) {
+    if (err instanceof ErrorGeocodificacion && err.deEntrada) throw new ErrorApi(400, err.message);
+    console.error('[geocodificar]', err.message);
+    throw new ErrorApi(502, 'El servicio de direcciones no respondió. Seleccione el punto en el mapa.');
+  }
 }));
 
 // Excepción declarada (en v1 la registra la web en nombre del adoptante; luego vendrá de la app móvil).
