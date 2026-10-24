@@ -11,7 +11,7 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onCreada, onCa
 
   const enviar = async (e) => {
     e.preventDefault();
-    if (zona.lat == null) return setError('Marca en el mapa el centro de la zona segura.');
+    if (zona.lat == null) return setError('Seleccione en el mapa el centro de la zona segura.');
     setEnviando(true);
     setError(null);
     try {
@@ -33,7 +33,7 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onCreada, onCa
     <div className="panel-contenido">
       <div className="panel-cabecera">
         <h2>Nueva adopción</h2>
-        <button className="boton fantasma" onClick={onCancelar}>Cancelar</button>
+        <button className="boton fantasma" type="button" onClick={onCancelar}>Cancelar</button>
       </div>
       <form className="formulario" onSubmit={enviar}>
         <fieldset>
@@ -59,8 +59,8 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onCreada, onCa
         <fieldset>
           <legend>Collar</legend>
           <label className="campo">
-            <span>Identificador (el ID impreso atrás o el IMEI)</span>
-            <input placeholder="Opcional por ahora" {...campo('uid')} />
+            <span>Identificador (ID impreso en el equipo o IMEI)</span>
+            <input className="mono" placeholder="Opcional" {...campo('uid')} />
           </label>
           {pesoBajo && (
             <p className="aviso">Peso por debajo de {parametros.peso_minimo_kg.toFixed(2)} kg: el collar superaría el 2 % del peso corporal.</p>

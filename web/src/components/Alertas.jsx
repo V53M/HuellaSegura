@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DownloadSimple } from '@phosphor-icons/react';
 import { api } from '../api.js';
 import { duracion, fechaHora, hace } from '../formato.js';
 import { Estado } from './comunes.jsx';
@@ -75,33 +76,40 @@ export default function Alertas({ version, onAbrir }) {
           Solo abiertas
         </label>
         <div className="grupo-botones exportes">
-          <span className="tenue pequeno">Exportar (OE5):</span>
-          <a className="boton" href="/api/exportar/alertas.csv">alertas.csv</a>
-          <a className="boton" href="/api/exportar/transiciones.csv">transiciones.csv</a>
-          <a className="boton" href="/api/exportar/posiciones.csv">posiciones.csv</a>
+          <span className="tenue pequeno">Exportar (OE5)</span>
+          {['alertas', 'transiciones', 'posiciones'].map((t) => (
+            <a key={t} className="boton" href={`/api/exportar/${t}.csv`}>
+              <DownloadSimple size={14} aria-hidden="true" /> <span className="mono">{t}.csv</span>
+            </a>
+          ))}
         </div>
       </div>
-      {alertas?.length === 0 && <p className="tenue">No hay alertas.</p>}
-      <div className="tabla-alertas">
+      {alertas?.length === 0 && <p className="tenue">Sin alertas.</p>}
+      <div className="tabla-alertas" hidden={!alertas?.length}>
         {alertas?.map((a) => (
           <article key={a.id} className={`fila-alerta ${a.resuelta_en ? 'resuelta' : a.escalada_en ? 'escalada' : 'abierta'}`}>
             <div>
-              <button className="enlace" onClick={() => onAbrir(a.adopcion_id)}><strong>{a.animal}</strong></button>
-              <div className="tenue pequeno">{a.adoptante} · {a.telefono}</div>
-              <div className="pequeno">Estado actual: <Estado estado={a.estado} corto /></div>
+              <button className="enlace" onClick={() => onAbrir(a.adopcion_id)}>{a.animal}</button>
+              <div className="tenue pequeno">{a.adoptante} · <span className="mono">{a.telefono}</span></div>
+              <div className="pequeno" style={{ marginTop: 4 }}><Estado estado={a.estado} corto /></div>
             </div>
-            <div className="pequeno">
-              <div>Creada: {fechaHora(a.creada_en)} ({hace(a.creada_en)})</div>
-              <div>Fuera desde: {fechaHora(a.fuera_desde)}</div>
-              {a.escalada_en && <div>Escalada: {fechaHora(a.escalada_en)}</div>}
-              {a.respondida_en && <div>Respuesta: «{a.respuesta ?? '—'}» ({fechaHora(a.respondida_en)})</div>}
-              {a.resuelta_en && (
-                <div>
-                  Resuelta: {RESOLUCION[a.causa_resolucion] ?? a.causa_resolucion} tras {duracion(a.creada_en, a.resuelta_en)}
-                </div>
+            <dl>
+              <dt>Creada</dt>
+              <dd><span className="mono">{fechaHora(a.creada_en)}</span> <span className="tenue">({hace(a.creada_en)})</span></dd>
+              <dt>Fuera desde</dt>
+              <dd className="mono">{fechaHora(a.fuera_desde)}</dd>
+              {a.escalada_en && <><dt>Escalada</dt><dd className="mono">{fechaHora(a.escalada_en)}</dd></>}
+              {a.respondida_en && (
+                <><dt>Respuesta</dt><dd>«{a.respuesta ?? '—'}» <span className="mono tenue">{fechaHora(a.respondida_en)}</span></dd></>
               )}
-              {a.resultado_verificacion && <div>Verificación: {VERIFICACION[a.resultado_verificacion]}</div>}
-            </div>
+              {a.resuelta_en && (
+                <>
+                  <dt>Resuelta</dt>
+                  <dd>{RESOLUCION[a.causa_resolucion] ?? a.causa_resolucion} · <span className="mono">{duracion(a.creada_en, a.resuelta_en)}</span></dd>
+                </>
+              )}
+              {a.resultado_verificacion && <><dt>Verificación</dt><dd>{VERIFICACION[a.resultado_verificacion]}</dd></>}
+            </dl>
             <AccionesAlerta alerta={a} />
           </article>
         ))}

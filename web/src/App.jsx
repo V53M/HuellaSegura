@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { PawPrint, Siren, Warning } from '@phosphor-icons/react';
 import { api, useEventosServidor } from './api.js';
 import Mapa from './components/Mapa.jsx';
 import Lista from './components/Lista.jsx';
@@ -73,7 +74,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="barra">
-        <div className="marca">🐾 <strong>HuellaSegura</strong><span className="tenue pequeno">Plataforma de la fundación</span></div>
+        <div className="marca">
+          <PawPrint className="icono" size={20} weight="fill" aria-hidden="true" />
+          HuellaSegura
+        </div>
         <nav className="pestanas">
           <button className={vista === 'seguimiento' ? 'activa' : ''} onClick={() => setVista('seguimiento')}>Seguimiento</button>
           <button className={vista === 'alertas' ? 'activa' : ''} onClick={() => setVista('alertas')}>
@@ -81,9 +85,13 @@ export default function App() {
           </button>
           <button className={vista === 'parametros' ? 'activa' : ''} onClick={() => setVista('parametros')}>Parámetros</button>
         </nav>
-        <span className={`conexion ${conectado ? 'ok' : ''}`} title={conectado ? 'Recibiendo en tiempo real' : 'Sin conexión con el servidor'}>
-          {conectado ? 'En vivo' : 'Desconectado'}
-        </span>
+        <div className="barra-derecha">
+          {parametros?.fundacion && <span className="fundacion">{parametros.fundacion}</span>}
+          <span className="separador" />
+          <span className={`conexion ${conectado ? 'ok' : ''}`} title={conectado ? 'Recibiendo en tiempo real' : 'Sin conexión con el servidor'}>
+            {conectado ? 'En vivo' : 'Desconectado'}
+          </span>
+        </div>
       </header>
 
       <main className={`cuerpo ${vista === 'seguimiento' ? '' : 'oculto'}`}>
@@ -132,9 +140,14 @@ export default function App() {
       <div className="avisos" aria-live="polite">
         {avisos.map((a) => (
           <button key={a.id} className={`aviso-flotante ${a.tipo === 'ESCALADA' ? 'escalada' : ''}`} onClick={() => abrir(a.adopcionId)}>
-            {a.tipo === 'ESCALADA' ? '⚠️ Caso escalado: ' : '🚨 Nueva alerta: '}
-            <strong>{nombreDe(a.adopcionId)}</strong>
-            <span className="pequeno"> · ver expediente</span>
+            {a.tipo === 'ESCALADA'
+              ? <Warning className="icono" size={16} weight="fill" aria-hidden="true" />
+              : <Siren className="icono" size={16} weight="fill" aria-hidden="true" />}
+            <span>
+              {a.tipo === 'ESCALADA' ? 'Caso escalado: ' : 'Nueva alerta: '}
+              <strong>{nombreDe(a.adopcionId)}</strong>
+              <span className="tenue pequeno"> · Ver expediente</span>
+            </span>
           </button>
         ))}
       </div>

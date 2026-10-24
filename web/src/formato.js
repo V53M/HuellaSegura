@@ -1,24 +1,22 @@
+import { amber, amberDark, blue, blueDark, green, greenDark, plum, plumDark, red, redDark, slate, slateDark } from '@radix-ui/colors';
+import { Cat, Dog, PawPrint } from '@phosphor-icons/react';
+
+// color: punto del estado (paso 9 de Radix). texto: solo los estados que piden atención llevan texto de color (paso 11).
 export const ESTADOS = {
   DENTRO: { nombre: 'Dentro de la zona', corto: 'Dentro', color: 'var(--estado-dentro)' },
-  FUERA_EN_GRACIA: { nombre: 'Fuera, en periodo de gracia', corto: 'Fuera (gracia)', color: 'var(--estado-gracia)' },
+  FUERA_EN_GRACIA: { nombre: 'Fuera, en periodo de gracia', corto: 'Fuera (gracia)', color: 'var(--estado-gracia)', texto: 'var(--amber-11)' },
   EXCEPCION: { nombre: 'Salida con excepción declarada', corto: 'Excepción', color: 'var(--estado-excepcion)' },
-  ALERTA: { nombre: 'Alerta: superó el umbral', corto: 'Alerta', color: 'var(--estado-alerta)' },
-  ESCALADA: { nombre: 'Escalada a la fundación', corto: 'Escalada', color: 'var(--estado-escalada)' },
-  'SIN_SEÑAL': { nombre: 'Sin señal del collar', corto: 'Sin señal', color: 'var(--estado-sinsenal)' },
+  ALERTA: { nombre: 'Alerta: superó el umbral', corto: 'Alerta', color: 'var(--estado-alerta)', texto: 'var(--red-11)' },
+  ESCALADA: { nombre: 'Escalada a la fundación', corto: 'Escalada', color: 'var(--estado-escalada)', texto: 'var(--plum-11)' },
+  'SIN_SEÑAL': { nombre: 'Sin señal del collar', corto: 'Sin señal', color: 'var(--estado-sinsenal)', texto: 'var(--slate-11)' },
 };
 
-/** Colores concretos para MapLibre (no entiende variables CSS). Se leen del documento para respetar el tema. */
-export function coloresEstado() {
-  const css = getComputedStyle(document.documentElement);
-  const leer = (v) => css.getPropertyValue(v).trim();
-  return {
-    DENTRO: leer('--estado-dentro'),
-    FUERA_EN_GRACIA: leer('--estado-gracia'),
-    EXCEPCION: leer('--estado-excepcion'),
-    ALERTA: leer('--estado-alerta'),
-    ESCALADA: leer('--estado-escalada'),
-    'SIN_SEÑAL': leer('--estado-sinsenal'),
-  };
+/** Colores hex para MapLibre, que no entiende variables CSS ni colores display-p3. Mismos pasos de Radix que en estilos.css. */
+export function coloresEstado(oscuro) {
+  const [g, a, b, r, p, s] = oscuro
+    ? [greenDark.green9, amberDark.amber9, blueDark.blue9, redDark.red9, plumDark.plum9, slateDark.slate9]
+    : [green.green9, amber.amber9, blue.blue9, red.red9, plum.plum9, slate.slate9];
+  return { DENTRO: g, FUERA_EN_GRACIA: a, EXCEPCION: b, ALERTA: r, ESCALADA: p, 'SIN_SEÑAL': s };
 }
 
 export const CAUSAS = {
@@ -44,7 +42,7 @@ export function causa(c) {
 }
 
 export const MOTIVOS = { PASEO: 'Paseo', VETERINARIA: 'Veterinaria', VIAJE: 'Viaje' };
-export const ESPECIES = { PERRO: '🐶', GATO: '🐱', OTRO: '🐾' };
+export const ESPECIES = { PERRO: Dog, GATO: Cat, OTRO: PawPrint };
 
 const rtf = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 export function hace(fecha) {
@@ -58,7 +56,7 @@ export function hace(fecha) {
 }
 
 export const fechaHora = (f) =>
-  f ? new Date(f).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'medium' }) : '—';
+  f ? new Date(f).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'medium', hour12: false }) : '—';
 
 export function duracion(desde, hasta = Date.now()) {
   if (!desde) return '—';
