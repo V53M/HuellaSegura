@@ -1,5 +1,6 @@
-import { ESPECIES, ESTADOS, hace } from '../formato.js';
-import { Bateria, Estado } from './comunes.jsx';
+import { Plus } from '@phosphor-icons/react';
+import { ESTADOS, hace } from '../formato.js';
+import { Bateria, Estado, IconoEspecie } from './comunes.jsx';
 
 const PRIORIDAD = ['ESCALADA', 'ALERTA', 'SIN_SEÑAL', 'FUERA_EN_GRACIA', 'EXCEPCION', 'DENTRO'];
 
@@ -13,40 +14,52 @@ export default function Lista({ seguimiento, onSeleccionar, onNueva }) {
   return (
     <div className="panel-contenido">
       <div className="panel-cabecera">
-        <h2>Animales en seguimiento</h2>
-        <button className="boton primario" onClick={onNueva}>+ Nueva adopción</button>
+        <h2>Seguimiento <span className="tenue mono">{seguimiento.length}</span></h2>
+        <button className="boton primario" onClick={onNueva}>
+          <Plus size={14} weight="bold" aria-hidden="true" /> Nueva adopción
+        </button>
       </div>
-      <div className="resumen">
+      <div className="resumen sin-margen">
         {PRIORIDAD.map((k) => (
-          <div key={k} className="resumen-item" style={{ '--c': ESTADOS[k].color }}>
+          <div key={k} className="resumen-item">
             <strong>{conteo[k]}</strong>
-            <span>{ESTADOS[k].corto}</span>
+            <span style={{ '--c': ESTADOS[k].color }}>
+              <span className="estado-punto" />
+              {ESTADOS[k].corto}
+            </span>
           </div>
         ))}
       </div>
-      {ordenados.length === 0 && <p className="tenue">Todavía no hay adopciones. Registra la primera.</p>}
-      <ul className="lista">
-        {ordenados.map((s) => (
-          <li key={s.adopcion_id}>
-            <button className="tarjeta" onClick={() => onSeleccionar(s.adopcion_id)}>
-              <span className="tarjeta-icono">{ESPECIES[s.especie]}</span>
-              <span className="tarjeta-cuerpo">
-                <span className="tarjeta-titulo">
-                  <strong>{s.animal}</strong>
-                  <Estado estado={s.estado} corto />
+      <div className="sin-margen">
+        <div className="encabezado-casos" aria-hidden="true">
+          <span />
+          <span>Animal · Estado</span>
+          <span>Último reporte</span>
+        </div>
+        {ordenados.length === 0 && <p className="vacio">Sin adopciones registradas.</p>}
+        <ul className="tabla-casos">
+          {ordenados.map((s) => (
+            <li key={s.adopcion_id}>
+              <button className="fila-caso" onClick={() => onSeleccionar(s.adopcion_id)}>
+                <IconoEspecie especie={s.especie} size={18} />
+                <span className="caso-cuerpo">
+                  <span className="caso-titulo">
+                    <strong>{s.animal}</strong>
+                    <Estado estado={s.estado} corto />
+                  </span>
+                  <span className="caso-sub">
+                    {s.adoptante} · <span className="mono">{s.dispositivo_uid ?? 'sin collar'}</span>
+                  </span>
                 </span>
-                <span className="tenue pequeno">
-                  {s.adoptante} · {s.dispositivo_uid ?? 'sin collar'}
-                </span>
-                <span className="tarjeta-pie pequeno">
-                  <span>Último reporte {hace(s.ultimo_reporte)}</span>
+                <span className="caso-derecha">
+                  <span className="mono">{hace(s.ultimo_reporte)}</span>
                   <Bateria pct={s.bateria_pct} />
                 </span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
