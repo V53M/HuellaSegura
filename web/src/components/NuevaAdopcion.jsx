@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api } from '../api.js';
 import { EditorZona } from './comunes.jsx';
 
-export default function NuevaAdopcion({ zona, onZona, parametros, onCreada, onCancelar }) {
+export default function NuevaAdopcion({ zona, onZona, parametros, onEnfocar, onCreada, onCancelar }) {
   const [f, setF] = useState({ nombre: '', especie: 'PERRO', peso_kg: '', adoptante: '', telefono: '', direccion: '', uid: '' });
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -68,7 +68,10 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onCreada, onCa
         </fieldset>
         <fieldset>
           <legend>Zona segura</legend>
-          <EditorZona zona={zona} onCambio={onZona} errorM={parametros?.error_m_respaldo} />
+          <EditorZona
+            zona={zona} onCambio={onZona} errorM={parametros?.error_m_respaldo} onEnfocar={onEnfocar}
+            direccionSugerida={f.direccion.trim() || null}
+          />
         </fieldset>
         {error && <p className="error">{error}</p>}
         <button className="boton primario" disabled={enviando}>Registrar adopción</button>

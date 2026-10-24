@@ -58,6 +58,23 @@ h3 { font-size: 11px; font-weight: 600; margin: 0 0 8px; color: var(--tenue); te
 }
 .panel-contenido > .editor-zona { padding-top: 12px; padding-bottom: 4px; }
 .panel-contenido > .grupo-botones { padding-top: 8px; padding-bottom: 16px; }
+.buscador { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; align-items: flex-start; }
+.buscador > * { margin: 0; }
+.buscador-fila { display: flex; gap: 6px; width: 100%; }
+.buscador-fila input { flex: 1; }
+.buscador .enlace { font-weight: 500; text-align: left; color: var(--primario); }
+.candidatos { list-style: none; margin: 0; padding: 0; width: 100%; border: 1px solid var(--borde); border-radius: var(--radio-sm); overflow: hidden; }
+.candidatos li + li { border-top: 1px solid var(--borde-suave); }
+.candidato {
+  width: 100%; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 0; border-left: 3px solid transparent;
+  background: var(--superficie); color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.candidato:hover { background: var(--hover); }
+.candidato.elegido { border-left-color: var(--primario); background: var(--indigo-2); }
+.candidato-titulo { font-weight: 500; }
+.candidato-detalle { display: flex; justify-content: space-between; gap: 8px; color: var(--tenue); font-size: 12px; }
+.girando { animation: girar 0.9s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
 .ayuda { margin: 0 0 8px; display: flex; align-items: center; gap: 6px; color: var(--tenue); }
 .icono { flex: none; }
 

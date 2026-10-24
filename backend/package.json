@@ -8,7 +8,7 @@
     "start": "node --env-file-if-exists=.env src/server.js",
     "migrar": "node --env-file-if-exists=.env src/db/migrar.js",
     "semilla": "node --env-file-if-exists=.env src/db/semilla.js",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=src/motor/**"
+    "test": "node --test --experimental-test-coverage --test-coverage-include=src/motor/** --test-coverage-include=src/geocodificacion/direccion.js"
   },
   "dependencies": {
     "express": "^4.21.2",
