@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Simulador de trayectorias (CLAUDE.md §7.3). Envía posiciones con el protocolo OsmAnd:
+// Simulador de trayectorias (contexto del proyecto, §7.3). Envía posiciones con el protocolo OsmAnd:
 // por defecto al endpoint directo de la API; con --destino http://<host>:5055/ las manda a Traccar.
 //
 //   node simular.js --escenario salida_prolongada --uid sim-001

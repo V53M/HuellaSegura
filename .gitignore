@@ -2,3 +2,10 @@ node_modules/
 dist/
 .env
 *.log
+firebase-*.json
+*-firebase-adminsdk-*.json
+
+# Notas de trabajo locales: no se suben al repositorio
+CLAUDE.md
+CONTEXTO_HuellaSegura.md
+.claude/

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { api } from './api/rutas.js';
 import { ingesta } from './ingesta/ingesta.js';
 import { tick } from './motor/servicio.js';
+import { iniciarNotificaciones } from './notificaciones/notificaciones.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -20,6 +21,8 @@ if (existsSync(web)) {
   app.use(express.static(web));
   app.get(/^\/(?!api|ingesta).*/, (_req, res) => res.sendFile(join(web, 'index.html')));
 }
+
+iniciarNotificaciones();
 
 const puerto = Number(process.env.PORT ?? 3000);
 app.listen(puerto, () => console.log(`HuellaSegura API en http://localhost:${puerto}`));

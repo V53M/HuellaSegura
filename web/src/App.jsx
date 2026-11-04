@@ -20,12 +20,11 @@ export default function App() {
   const [enfoque, setEnfoque] = useState(null);
   const [avisos, setAvisos] = useState([]);
 
-  const alAlerta = useCallback((a) => {
-    const id = Date.now() + Math.random();
-    setAvisos((v) => [...v, { id, ...a }]);
-    setTimeout(() => setAvisos((v) => v.filter((x) => x.id !== id)), 8000);
+  const alNotificar = useCallback((n) => {
+    setAvisos((v) => [...v, n]);
+    setTimeout(() => setAvisos((v) => v.filter((x) => x.id !== n.id)), 8000);
   }, []);
-  const { version, conectado } = useEventosServidor(alAlerta);
+  const { version, conectado } = useEventosServidor(alNotificar);
 
   const cargarParametros = useCallback(() => api.parametros().then(setParametros), []);
   useEffect(() => {
@@ -142,7 +141,11 @@ export default function App() {
 
       <div className="avisos" aria-live="polite">
         {avisos.map((a) => (
-          <button key={a.id} className={`aviso-flotante ${a.tipo === 'ESCALADA' ? 'escalada' : ''}`} onClick={() => abrir(a.adopcionId)}>
+          <button key={a.id} className={`aviso-flotante ${a.tipo === 'ESCALADA' ? 'escalada' : ''}`} onClick={() => {
+            api.marcarLeida(a.id).catch(() => {});
+            setAvisos((v) => v.filter((x) => x.id !== a.id));
+            abrir(a.adopcionId);
+          }}>
             {a.tipo === 'ESCALADA'
               ? <Warning className="icono" size={16} weight="fill" aria-hidden="true" />
               : <Siren className="icono" size={16} weight="fill" aria-hidden="true" />}

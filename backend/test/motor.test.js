@@ -1,4 +1,4 @@
-// Escenarios de aceptación del motor sobre trazas sintéticas (CLAUDE.md §7.3).
+// Escenarios de aceptación del motor sobre trazas sintéticas (contexto del proyecto, §7.3).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { E, clasificar, distanciaM, estadoInicial, evaluar } from '../src/motor/motor.js';
@@ -144,6 +144,9 @@ test('alerta sin respuesta escala; ESCALADA ignora el regreso y solo la cierra l
   assert.deepEqual(hacia, [E.FUERA_EN_GRACIA, E.ALERTA, E.ESCALADA, E.DENTRO]);
   assert.equal(r.transiciones.at(-1).causa, 'CIERRE_FUNDACION');
   assert.deepEqual(r.acciones.map((a) => a.tipo), ['CREAR_ALERTA', 'ESCALAR_ALERTA', 'RESOLVER_ALERTA']);
+  // Instantes exactos en que se cumplieron las condiciones (base de la latencia del OE5), aunque se detecten después.
+  assert.equal(r.acciones[0].cumplido_en, T0 + 21 * MIN); // salió en el min 1 + umbral de 20 min; detectado en el 22
+  assert.equal(r.acciones[1].cumplido_en, T0 + 142 * MIN); // alerta del min 22 + 2 h
 });
 
 test('respuesta del adoptante cierra la alerta y abre una nueva ventana', () => {
