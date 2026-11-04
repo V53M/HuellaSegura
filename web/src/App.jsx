@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { PawPrint, Siren, Warning } from '@phosphor-icons/react';
+import { PawPrint, SignOut, Siren, Warning } from '@phosphor-icons/react';
 import { api, useEventosServidor } from './api.js';
 import Mapa from './components/Mapa.jsx';
 import Lista from './components/Lista.jsx';
@@ -7,9 +7,11 @@ import Detalle from './components/Detalle.jsx';
 import NuevaAdopcion from './components/NuevaAdopcion.jsx';
 import Alertas from './components/Alertas.jsx';
 import Parametros from './components/Parametros.jsx';
+import Usuarios from './components/Usuarios.jsx';
 import { EditorZona } from './components/comunes.jsx';
 
-export default function App() {
+export default function App({ usuario, onSalir }) {
+  const esAdmin = usuario.rol === 'ADMIN_FUNDACION';
   const [vista, setVista] = useState('seguimiento');
   const [panel, setPanel] = useState({ modo: 'lista' }); // lista · detalle · nueva · zona
   const [seguimiento, setSeguimiento] = useState([]);
@@ -83,6 +85,7 @@ export default function App() {
             Alertas {abiertas > 0 && <span className="insignia">{abiertas}</span>}
           </button>
           <button className={vista === 'parametros' ? 'activa' : ''} onClick={() => setVista('parametros')}>Parámetros</button>
+          {esAdmin && <button className={vista === 'usuarios' ? 'activa' : ''} onClick={() => setVista('usuarios')}>Usuarios</button>}
         </nav>
         <div className="barra-derecha">
           {parametros?.fundacion && <span className="fundacion">{parametros.fundacion}</span>}
@@ -90,6 +93,11 @@ export default function App() {
           <span className={`conexion ${conectado ? 'ok' : ''}`} title={conectado ? 'Recibiendo en tiempo real' : 'Sin conexión con el servidor'}>
             {conectado ? 'En vivo' : 'Desconectado'}
           </span>
+          <span className="separador" />
+          <span className="usuario-actual" title={usuario.correo}>{usuario.nombre}</span>
+          <button className="boton fantasma" onClick={onSalir} title="Cerrar sesión">
+            <SignOut size={14} aria-hidden="true" /> Salir
+          </button>
         </div>
       </header>
 
@@ -137,7 +145,8 @@ export default function App() {
       </main>
 
       {vista === 'alertas' && <Alertas version={version} onAbrir={abrir} />}
-      {vista === 'parametros' && <Parametros onGuardado={cargarParametros} />}
+      {vista === 'parametros' && <Parametros onGuardado={cargarParametros} editable={esAdmin} />}
+      {vista === 'usuarios' && esAdmin && <Usuarios usuario={usuario} />}
 
       <div className="avisos" aria-live="polite">
         {avisos.map((a) => (

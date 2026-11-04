@@ -1,6 +1,11 @@
 // Datos de demostración: una fundación ficticia y tres adopciones en Cali con collares simulados.
 // Parámetros cortos para ver el ciclo completo en minutos; la fundación los cambia desde la web.
 import { pool, enTransaccion } from './db.js';
+import { hashContrasena } from '../auth/contrasenas.js';
+import { POLITICA } from '../auth/politica.js';
+
+// Contraseña de todas las cuentas de demostración. Nunca usar esta semilla en el piloto real.
+const CONTRASENA_DEMO = 'huella-demo-2027';
 
 const ADOPCIONES = [
   { animal: 'Luna', especie: 'PERRO', peso: 12.5, adoptante: 'Adoptante de prueba 1', barrio: 'San Antonio', lat: 3.4497, lon: -76.5393, uid: 'sim-001' },
@@ -15,6 +20,13 @@ await enTransaccion(async (c) => {
     return;
   }
   const { rows: [f] } = await c.query(`INSERT INTO fundacion (nombre) VALUES ('Fundación de demostración') RETURNING id`);
+  const hash = await hashContrasena(CONTRASENA_DEMO);
+  await c.query(
+    `INSERT INTO usuario (correo, nombre, rol, fundacion_id, hash_contrasena) VALUES
+       ('admin@demo.huellasegura.co', 'Administración de demostración', 'ADMIN_FUNDACION', $1, $2),
+       ('personal@demo.huellasegura.co', 'Personal de demostración', 'PERSONAL_FUNDACION', $1, $2)`,
+    [f.id, hash],
+  );
   await c.query(
     `INSERT INTO parametros_fundacion (fundacion_id, radio_m_defecto, umbral_permanencia_min, horas_para_escalar, min_sin_senal, error_m_respaldo)
      VALUES ($1, 120, 2, 0.05, 1.5, 30)`,
@@ -29,6 +41,14 @@ await enTransaccion(async (c) => {
       `INSERT INTO adoptante (nombre, telefono, direccion) VALUES ($1, '300 000 0000', $2) RETURNING id`,
       [a.adoptante, `Barrio ${a.barrio}, Cali`],
     );
+    await c.query(
+      `INSERT INTO consentimiento (adoptante_id, version_politica, medio, evidencia) VALUES ($1, $2, 'FORMATO_FIRMADO', 'Semilla de demostración')`,
+      [ad.id, POLITICA.version],
+    );
+    await c.query(
+      `INSERT INTO usuario (correo, nombre, rol, adoptante_id, hash_contrasena) VALUES ($1, $2, 'ADOPTANTE', $3, $4)`,
+      [`adoptante${ADOPCIONES.indexOf(a) + 1}@demo.huellasegura.co`, a.adoptante, ad.id, hash],
+    );
     const { rows: [adop] } = await c.query(
       `INSERT INTO adopcion (animal_id, adoptante_id, fundacion_id) VALUES ($1, $2, $3) RETURNING id`,
       [an.id, ad.id, f.id],
@@ -42,5 +62,7 @@ await enTransaccion(async (c) => {
     await c.query(`INSERT INTO asignacion_dispositivo (dispositivo_uid, adopcion_id, desde) VALUES ($1, $2, now() - interval '1 day')`, [a.uid, adop.id]);
   }
   console.log(`Semilla lista: ${ADOPCIONES.length} adopciones (${ADOPCIONES.map((a) => a.uid).join(', ')}).`);
+  console.log(`Cuentas (contraseña «${CONTRASENA_DEMO}»): admin@ y personal@demo.huellasegura.co en la web;`);
+  console.log('adoptante1@, adoptante2@ y adoptante3@demo.huellasegura.co en la app.');
 });
 await pool.end();

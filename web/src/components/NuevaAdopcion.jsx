@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { EditorZona } from './comunes.jsx';
 
@@ -6,6 +6,12 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onEnfocar, onC
   const [f, setF] = useState({ nombre: '', especie: 'PERRO', peso_kg: '', adoptante: '', telefono: '', direccion: '', uid: '' });
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
+  const [politica, setPolitica] = useState(null);
+  const [firmado, setFirmado] = useState(false);
+  const [evidencia, setEvidencia] = useState('');
+  useEffect(() => {
+    api.politica().then(setPolitica).catch(() => {});
+  }, []);
   const campo = (k) => ({ value: f[k], onChange: (e) => setF({ ...f, [k]: e.target.value }) });
   const pesoBajo = f.uid && f.peso_kg && Number(f.peso_kg) < parametros?.peso_minimo_kg;
 
@@ -20,6 +26,7 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onEnfocar, onC
         adoptante: { nombre: f.adoptante, telefono: f.telefono, direccion: f.direccion },
         dispositivo_uid: f.uid,
         zona,
+        consentimiento: { firmado, version: politica?.version, evidencia },
       });
       onCreada(r.adopcion_id);
     } catch (err) {
@@ -65,6 +72,23 @@ export default function NuevaAdopcion({ zona, onZona, parametros, onEnfocar, onC
           {pesoBajo && (
             <p className="aviso">Peso por debajo de {parametros.peso_minimo_kg.toFixed(2)} kg: el collar superaría el 2 % del peso corporal.</p>
           )}
+        </fieldset>
+        <fieldset>
+          <legend>Autorización de datos (Ley 1581)</legend>
+          {politica && (
+            <details className="politica">
+              <summary className="pequeno">Qué autoriza el adoptante (versión <span className="mono">{politica.version}</span>)</summary>
+              <ul className="simple pequeno">{politica.resumen.map((t) => <li key={t}>{t}</li>)}</ul>
+            </details>
+          )}
+          <label className="interruptor">
+            <input type="checkbox" required checked={firmado} onChange={(e) => setFirmado(e.target.checked)} />
+            El adoptante firmó la autorización de tratamiento de datos
+          </label>
+          <label className="campo">
+            <span>Referencia del formato firmado</span>
+            <input placeholder="Ej.: FA-2027-014, archivado en la carpeta de la adopción" value={evidencia} onChange={(e) => setEvidencia(e.target.value)} />
+          </label>
         </fieldset>
         <fieldset>
           <legend>Zona segura</legend>

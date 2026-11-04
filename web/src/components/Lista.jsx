@@ -49,6 +49,7 @@ export default function Lista({ seguimiento, onSeleccionar, onNueva }) {
                   </span>
                   <span className="caso-sub">
                     {s.adoptante} · <span className="mono">{s.dispositivo_uid ?? 'sin collar'}</span>
+                    {!s.consentimiento_vigente && <span className="error"> · sin autorización de datos</span>}
                   </span>
                 </span>
                 <span className="caso-derecha">

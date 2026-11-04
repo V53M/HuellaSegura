@@ -7,6 +7,8 @@
 //
 // Escenarios: dentro · salida_corta · salida_prolongada · con_excepcion · saltos · sin_senal · borde
 // La duración se adapta al umbral de permanencia que tenga configurado la fundación.
+// Lee las adopciones con una cuenta de la fundación: por defecto la de la semilla
+// (--correo personal@demo.huellasegura.co --contrasena huella-demo-2027).
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, a, i, arr) => {
@@ -21,8 +23,25 @@ const INTERVALO_S = Number(args.intervalo ?? 5);
 const PRECISION = args.precision ? Number(args.precision) : null; // el TK911 Pro puede no reportarla
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
-const json = async (ruta, opciones) => {
-  const r = await fetch(`${API}${ruta}`, opciones);
+
+let cookie = null;
+async function iniciarSesion() {
+  const r = await fetch(`${API}/api/auth/iniciar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      correo: args.correo ?? 'personal@demo.huellasegura.co',
+      contrasena: args.contrasena ?? process.env.SIMULADOR_CONTRASENA ?? 'huella-demo-2027',
+      cliente: 'WEB',
+    }),
+  });
+  if (!r.ok) throw new Error(`No se pudo iniciar sesión: ${r.status} ${await r.text()}`);
+  cookie = r.headers.get('set-cookie').split(';')[0];
+}
+
+const json = async (ruta, opciones = {}) => {
+  if (!cookie) await iniciarSesion();
+  const r = await fetch(`${API}${ruta}`, { ...opciones, headers: { ...opciones.headers, Cookie: cookie } });
   if (!r.ok) throw new Error(`${ruta}: ${r.status} ${await r.text()}`);
   return r.json();
 };

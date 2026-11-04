@@ -4,7 +4,7 @@
 //   funcione sin Traccar en desarrollo. Se desactiva con INGESTA_DIRECTA=0.
 import { Router } from 'express';
 import { consulta } from '../db/db.js';
-import { procesarConexion, procesarPosicion } from '../motor/servicio.js';
+import { asignacionDe, procesarConexion, procesarPosicion } from '../motor/servicio.js';
 
 export const ingesta = Router();
 
@@ -32,6 +32,15 @@ export async function insertarPosicion(p) {
   return rows[0]?.id ?? null;
 }
 
+/**
+ * Ley 1581: si el collar está asignado a una adopción cuyo adoptante no tiene consentimiento vigente,
+ * la posición no se guarda. Un collar sin asignar (medición del error) sí se guarda: no hay datos de nadie.
+ */
+async function sinConsentimiento(uid, t) {
+  const { adopcionId, consentido } = await asignacionDe(uid, new Date(t).getTime());
+  return adopcionId != null && !consentido;
+}
+
 const procesarDespues = (fn) => setImmediate(() => fn().catch((err) => console.error('[motor]', err)));
 
 async function existeDispositivo(uid) {
@@ -45,6 +54,7 @@ ingesta.post('/posiciones', exigirSecreto, async (req, res) => {
   try {
     // Un collar no registrado se ignora con 200: si respondiéramos error, Traccar reintentaría para siempre.
     if (!(await existeDispositivo(device.uniqueId))) return res.status(200).json({ ignorada: true });
+    if (await sinConsentimiento(device.uniqueId, position.fixTime)) return res.status(200).json({ ignorada: true, motivo: 'SIN_CONSENTIMIENTO' });
     const a = position.attributes ?? {};
     const id = await insertarPosicion({
       traccarId: position.id,
@@ -98,6 +108,7 @@ ingesta.all('/osmand', async (req, res) => {
   try {
     if (!(await existeDispositivo(q.id))) return res.status(404).send('dispositivo no registrado');
     const ts = q.timestamp ? (/^\d+$/.test(q.timestamp) ? new Date(Number(q.timestamp) * 1000) : new Date(q.timestamp)) : new Date();
+    if (await sinConsentimiento(q.id, ts)) return res.status(200).send('ignorada: sin consentimiento');
     const id = await insertarPosicion({
       uid: q.id,
       fixTime: ts,
