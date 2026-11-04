@@ -68,14 +68,15 @@ async function guardar(cliente, adopcionId, cargado, resultado, posicionId, avis
   for (const accion of resultado.acciones) {
     if (accion.tipo === 'CREAR_ALERTA') {
       const { rows } = await cliente.query(
-        `INSERT INTO alerta (adopcion_id, fundacion_id, creada_en, fuera_desde) VALUES ($1, $2, $3, $4) RETURNING id`,
-        [adopcionId, cargado.fundacionId, fecha(s.alerta_desde), fecha(accion.fuera_desde)],
+        `INSERT INTO alerta (adopcion_id, fundacion_id, creada_en, fuera_desde, umbral_cumplido_en)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [adopcionId, cargado.fundacionId, fecha(s.alerta_desde), fecha(accion.fuera_desde), fecha(accion.cumplido_en)],
       );
       alertaId = rows[0].id;
-      avisos.push({ tipo: 'NUEVA', alertaId, adopcionId, fundacionId: cargado.fundacionId });
+      avisos.push({ tipo: 'NUEVA', alertaId, adopcionId, fundacionId: cargado.fundacionId, condicionEn: accion.cumplido_en });
     } else if (accion.tipo === 'ESCALAR_ALERTA' && alertaId) {
-      await cliente.query(`UPDATE alerta SET escalada_en = now() WHERE id = $1`, [alertaId]);
-      avisos.push({ tipo: 'ESCALADA', alertaId, adopcionId, fundacionId: cargado.fundacionId });
+      await cliente.query(`UPDATE alerta SET escalada_en = now(), escalada_cumplida_en = $2 WHERE id = $1`, [alertaId, fecha(accion.cumplido_en)]);
+      avisos.push({ tipo: 'ESCALADA', alertaId, adopcionId, fundacionId: cargado.fundacionId, condicionEn: accion.cumplido_en });
     } else if (accion.tipo === 'RESOLVER_ALERTA' && alertaId) {
       await cliente.query(
         `UPDATE alerta SET resuelta_en = now(), causa_resolucion = $2 WHERE id = $1 AND resuelta_en IS NULL`,

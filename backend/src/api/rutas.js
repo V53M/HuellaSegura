@@ -5,6 +5,7 @@ import { consulta, enTransaccion } from '../db/db.js';
 import { bus } from '../eventos.js';
 import { eventoManual } from '../motor/servicio.js';
 import { ErrorGeocodificacion, geocodificar } from '../geocodificacion/geocodificacion.js';
+import { latencias, resumenLatencias } from '../notificaciones/metricas.js';
 
 export const api = Router();
 const FUNDACION_ID = Number(process.env.FUNDACION_ID ?? 1);
@@ -229,7 +230,12 @@ api.post('/adopciones/:id/excepciones', manejar(async (req) => {
 api.get('/alertas', manejar(async (req) => {
   const soloAbiertas = req.query.abiertas === '1';
   const { rows } = await consulta(
-    `SELECT al.*, an.nombre AS animal, ad.nombre AS adoptante, ad.telefono, e.estado
+    `SELECT al.*, an.nombre AS animal, ad.nombre AS adoptante, ad.telefono, e.estado,
+            (SELECT COALESCE(json_agg(json_build_object(
+                      'id', n.id, 'tipo', n.tipo, 'destinatario', n.destinatario, 'canal', n.canal,
+                      'condicion_en', n.condicion_en, 'enviada_en', n.enviada_en, 'entregada_en', n.entregada_en,
+                      'leida_en', n.leida_en, 'error', n.error) ORDER BY n.id), '[]')
+               FROM notificacion n WHERE n.alerta_id = al.id) AS notificaciones
        FROM alerta al
        JOIN adopcion a ON a.id = al.adopcion_id
        JOIN animal an ON an.id = a.animal_id
@@ -267,6 +273,69 @@ api.post('/alertas/:id/cerrar', manejar(async (req) => {
   return alertaDeLaFundacion(alerta.id);
 }));
 
+// ---------- Notificaciones y latencia (OE5) ----------
+
+// Registro del token FCM de la app del adoptante. Pendiente: que solo el propio adoptante pueda hacerlo (autenticación).
+api.post('/adoptantes/:id/tokens', manejar(async (req) => {
+  const { rows: [ad] } = await consulta(
+    `SELECT ad.id FROM adoptante ad JOIN adopcion a ON a.adoptante_id = ad.id
+      WHERE ad.id = $1 AND a.fundacion_id = $2 LIMIT 1`,
+    [req.params.id, FUNDACION_ID],
+  );
+  if (!ad) throw new ErrorApi(404, 'Adoptante no encontrado');
+  const token = req.body?.token?.trim();
+  if (!token || token.length > 4096) throw new ErrorApi(400, 'Token inválido');
+  const plataforma = req.body?.plataforma ?? 'ANDROID';
+  if (!['ANDROID', 'WEB'].includes(plataforma)) throw new ErrorApi(400, 'Plataforma inválida (ANDROID o WEB)');
+  const { rows: [t] } = await consulta(
+    `INSERT INTO token_push (adoptante_id, token, plataforma) VALUES ($1, $2, $3)
+     ON CONFLICT (token) DO UPDATE SET adoptante_id = EXCLUDED.adoptante_id, plataforma = EXCLUDED.plataforma,
+       activo = TRUE, desactivado_en = NULL, motivo_baja = NULL, registrado_en = now()
+     RETURNING id, adoptante_id, plataforma, registrado_en`,
+    [ad.id, token, plataforma],
+  );
+  return t;
+}));
+
+async function notificacionDeLaFundacion(id) {
+  const { rows } = await consulta(
+    `SELECT n.id FROM notificacion n JOIN alerta al ON al.id = n.alerta_id WHERE n.id = $1 AND al.fundacion_id = $2`,
+    [id, FUNDACION_ID],
+  );
+  if (!rows[0]) throw new ErrorApi(404, 'Notificación no encontrada');
+  return rows[0].id;
+}
+
+// Acuses del cliente (web o app). Se marca con la hora del servidor y solo la primera vez:
+// incluye el viaje del acuse, así que la latencia medida es una cota superior.
+api.post('/notificaciones/:id/entregada', manejar(async (req) => {
+  const id = await notificacionDeLaFundacion(req.params.id);
+  const { rows } = await consulta(
+    `UPDATE notificacion SET entregada_en = COALESCE(entregada_en, now()) WHERE id = $1
+     RETURNING id, condicion_en, creada_en, enviada_en, entregada_en, leida_en`,
+    [id],
+  );
+  return { ...rows[0], ...latencias(rows[0]) };
+}));
+
+api.post('/notificaciones/:id/leida', manejar(async (req) => {
+  const id = await notificacionDeLaFundacion(req.params.id);
+  const { rows } = await consulta(
+    `UPDATE notificacion SET entregada_en = COALESCE(entregada_en, now()), leida_en = COALESCE(leida_en, now())
+      WHERE id = $1 RETURNING id, condicion_en, creada_en, enviada_en, entregada_en, leida_en`,
+    [id],
+  );
+  return { ...rows[0], ...latencias(rows[0]) };
+}));
+
+api.get('/metricas/latencia', manejar(async () => {
+  const { rows } = await consulta(
+    `SELECT n.* FROM notificacion n JOIN alerta al ON al.id = n.alerta_id WHERE al.fundacion_id = $1`,
+    [FUNDACION_ID],
+  );
+  return resumenLatencias(rows);
+}));
+
 // ---------- Exportes para el OE5 ----------
 
 const EXPORTES = {
@@ -279,6 +348,14 @@ const EXPORTES = {
   transiciones: `SELECT t.* FROM transicion_estado t JOIN adopcion a ON a.id = t.adopcion_id
                   WHERE a.fundacion_id = $1 ORDER BY t.ocurrida_en`,
   alertas: `SELECT * FROM alerta WHERE fundacion_id = $1 ORDER BY creada_en`,
+  notificaciones: `SELECT n.id, n.alerta_id, al.adopcion_id, n.tipo, n.destinatario, n.canal, n.condicion_en, n.creada_en,
+                          n.enviada_en, n.entregada_en, n.leida_en, n.error,
+                          EXTRACT(EPOCH FROM n.creada_en - n.condicion_en) AS deteccion_s,
+                          EXTRACT(EPOCH FROM n.enviada_en - n.condicion_en) AS envio_s,
+                          EXTRACT(EPOCH FROM n.entregada_en - n.condicion_en) AS entrega_s,
+                          EXTRACT(EPOCH FROM n.leida_en - n.condicion_en) AS lectura_s
+                     FROM notificacion n JOIN alerta al ON al.id = n.alerta_id
+                    WHERE al.fundacion_id = $1 ORDER BY n.condicion_en, n.id`,
 };
 
 const celdaCsv = (v) => {
@@ -304,12 +381,16 @@ api.get('/eventos', (req, res) => {
   const enviar = (tipo) => (datos) => res.write(`event: ${tipo}\ndata: ${JSON.stringify(datos)}\n\n`);
   const alSeguimiento = enviar('seguimiento');
   const alAlerta = enviar('alerta');
+  const enviarNotificacion = enviar('notificacion');
+  const alNotificacion = (n) => n.fundacionId === FUNDACION_ID && enviarNotificacion(n);
   bus.on('seguimiento', alSeguimiento);
   bus.on('alerta', alAlerta);
+  bus.on('notificacion', alNotificacion);
   const latido = setInterval(() => res.write(': latido\n\n'), 25_000);
   req.on('close', () => {
     clearInterval(latido);
     bus.off('seguimiento', alSeguimiento);
     bus.off('alerta', alAlerta);
+    bus.off('notificacion', alNotificacion);
   });
 });

@@ -1,7 +1,7 @@
 # HuellaSegura — v0.1 (web)
 
 Primera versión del rastreo de animales y zonas seguras: backend con el motor de estados, plataforma web
-de la fundación y simulador de trayectorias. El contexto completo del proyecto está en [CLAUDE.md](CLAUDE.md).
+de la fundación y simulador de trayectorias. El contexto completo del proyecto está en el documento de anteproyecto.
 
 ## Requisitos
 - Node.js 20 o superior
@@ -61,12 +61,13 @@ npm test        # escenarios del motor sobre trazas sintéticas, con cobertura
 
 | Parte | Archivo | Estado |
 |---|---|---|
-| Modelo de datos (PostGIS) | `backend/src/db/migraciones/001_modelo.sql` | Entidades de §6.1 y §6.2 salvo `usuario`, `notificacion` y `consentimiento` |
+| Modelo de datos (PostGIS) | `backend/src/db/migraciones/001_modelo.sql` | Entidades de §6.1 y §6.2 salvo `usuario` y `consentimiento` |
 | Motor de estados (función pura) | `backend/src/motor/motor.js` | Los 6 estados, histéresis, umbral, excepciones, escalada, sin señal |
 | Motor ↔ BD + reloj | `backend/src/motor/servicio.js`, `server.js` | Tick cada `TICK_SEGUNDOS` para lo que depende del tiempo |
 | Ingesta | `backend/src/ingesta/ingesta.js` | Traccar (`/ingesta/posiciones`, `/ingesta/eventos`) y OsmAnd directo (`/ingesta/osmand`) |
 | API REST | `backend/src/api/rutas.js` | Seguimiento, expediente, zonas, excepciones, alertas, parámetros, exportes CSV, SSE |
 | Web de la fundación | `web/` | Mapa en vivo, alta de adopciones, editor de zona, expediente, bandeja de alertas, parámetros |
+| Notificaciones y latencia | `backend/src/notificaciones/` | Push FCM al adoptante, aviso web a la fundación, acuses y métricas (OE5) |
 | Simulador | `simulador/simular.js` | 7 escenarios |
 
 ### Ubicar la zona segura por dirección
@@ -86,6 +87,27 @@ unas coordenadas (`3.4516, -76.5320`) en lugar de marcar el punto en el mapa
   guardar en caché (todo eso lo hace el backend). Para el piloto conviene poner un correo en
   `GEOCODIFICACION_CONTACTO`.
 
+### Notificaciones y latencia de alerta (OE5)
+Cada alerta genera una fila en `notificacion` por destinatario y canal, con cuatro marcas de tiempo:
+
+`condicion_en` (umbral o plazo de escalada cumplido) → `enviada_en` → `entregada_en` (acuse del cliente) → `leida_en`
+
+La **latencia de alerta** es `entregada_en − condicion_en`. Incluye el retardo del tick del motor y el viaje del acuse,
+así que es una cota superior honesta.
+
+- **NUEVA** va a la fundación de origen (web, por SSE) y al adoptante (push FCM a cada teléfono registrado).
+- **ESCALADA** va solo a la fundación.
+- La web acusa cada aviso al recibirlo y lo marca leído al hacer clic. La app móvil debe hacer lo mismo con
+  `POST /api/notificaciones/:id/entregada` y `/leida`, usando el `notificacion_id` que llega en los datos de la push.
+- Un aviso que no se pudo enviar también queda registrado (`SIN_TOKEN`, `FCM_NO_CONFIGURADO`, `UNREGISTERED`),
+  porque cuenta como no entregado en las métricas. Un token que FCM reporta como inválido se da de baja.
+- La bandeja de alertas muestra la mediana y el p95 por destinatario (`GET /api/metricas/latencia`), y
+  `notificaciones.csv` trae las latencias en segundos para el informe.
+
+**Activar FCM:** en la consola de Firebase, *Configuración del proyecto → Cuentas de servicio → Generar nueva clave
+privada*, y poner la ruta del JSON en `FCM_CREDENCIALES` del `.env`. No se sube al repositorio. La app registra su
+token con `POST /api/adoptantes/:id/tokens` (`{ "token": "...", "plataforma": "ANDROID" }`).
+
 ### Decisiones del motor que conviene validar con el director
 - **El umbral sigue contando sin señal.** Si el animal salió y el collar se apagó, la alerta igual se genera (queda
   registrada con la causa `UMBRAL_SUPERADO_SIN_SEÑAL`).
@@ -95,8 +117,8 @@ unas coordenadas (`3.4516, -76.5320`) en lugar de marcar el punto en el mapa
 - **Una alerta escalada solo la cierra la fundación,** aunque el animal haya vuelto.
 
 ## Pendiente para las siguientes versiones
-- Autenticación y roles (`usuario`), y consentimiento (Ley 1581). Hoy la API actúa como una única fundación.
-- `notificacion` con `enviada_en`, `entregada_en` y `leida_en`, y FCM, para medir la latencia (OE5).
+- Autenticación y roles (`usuario`), y consentimiento (Ley 1581). Hoy la API actúa como una única fundación, y
+  los endpoints de tokens y acuses no verifican todavía que quien llama sea el adoptante.
 - Traccar en `docker-compose` con el `traccar.xml` de §7.1.
 - `openapi.yaml`.
 - Supresión auditada de datos.

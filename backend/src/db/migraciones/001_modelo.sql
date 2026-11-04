@@ -1,4 +1,4 @@
--- Modelo principal de HuellaSegura (v1 web). Ver CLAUDE.md §6.
+-- Modelo principal de HuellaSegura (v1 web). Ver contexto del proyecto, §6.
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS fundacion (

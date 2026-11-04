@@ -1,4 +1,4 @@
-// Endpoints de ingesta (CLAUDE.md §7.2).
+// Endpoints de ingesta (contexto del proyecto, §7.2).
 // - /ingesta/posiciones y /ingesta/eventos: reenvío JSON de Traccar (forward.url / event.forward.url).
 // - /ingesta/osmand: mismos parámetros que el protocolo OsmAnd de Traccar (:5055), para que el simulador
 //   funcione sin Traccar en desarrollo. Se desactiva con INGESTA_DIRECTA=0.

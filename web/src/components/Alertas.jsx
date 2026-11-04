@@ -9,6 +9,78 @@ const VERIFICACION = {
   SALIDA_LEGITIMA: 'Falso positivo: salida legítima',
   ERROR_POSICION: 'Falso positivo: error de posición',
 };
+const DESTINATARIO = { FUNDACION: 'Fundación', ADOPTANTE: 'Adoptante' };
+const ERRORES_ENVIO = {
+  SIN_TOKEN: 'sin app registrada',
+  FCM_NO_CONFIGURADO: 'push sin configurar en el servidor',
+  UNREGISTERED: 'la app ya no está instalada',
+};
+
+const segundos = (s) => {
+  if (s == null) return '—';
+  if (s < 60) return `${s.toFixed(1).replace('.', ',')} s`;
+  return `${Math.floor(s / 60)} min ${Math.round(s % 60)} s`;
+};
+const latenciaDe = (desde, hasta) => (desde && hasta ? (new Date(hasta) - new Date(desde)) / 1000 : null);
+
+/** Estado de entrega de cada notificación de una alerta: la evidencia de que se avisó a tiempo. */
+function Entregas({ notificaciones }) {
+  if (!notificaciones?.length) return null;
+  return (
+    <>
+      <dt>Avisos</dt>
+      <dd>
+        <ul className="entregas">
+          {notificaciones.map((n) => (
+            <li key={n.id}>
+              <span>{DESTINATARIO[n.destinatario]}{n.tipo === 'ESCALADA' ? ' (escalada)' : ''}: </span>
+              {n.entregada_en ? (
+                <span>
+                  recibida en <span className="mono">{segundos(latenciaDe(n.condicion_en, n.entregada_en))}</span>
+                  {n.leida_en && <span className="tenue"> · leída</span>}
+                </span>
+              ) : n.error ? (
+                <span className="tenue">no enviada, {ERRORES_ENVIO[n.error] ?? n.error}</span>
+              ) : (
+                <span className="tenue">{n.enviada_en ? 'enviada, sin acuse de recibo' : 'pendiente'}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </dd>
+    </>
+  );
+}
+
+/** Mediana y p95 de la latencia de alerta (umbral cumplido → aviso recibido), por destinatario. */
+function ResumenLatencia({ version }) {
+  const [grupos, setGrupos] = useState(null);
+  useEffect(() => {
+    api.latencia().then(setGrupos).catch(() => setGrupos(null));
+  }, [version]);
+  const nuevas = grupos?.filter((g) => g.tipo === 'NUEVA') ?? [];
+  if (nuevas.length === 0) return null;
+  return (
+    <section className="resumen-latencia" aria-label="Latencia de alerta">
+      <h3>Latencia de alerta (umbral cumplido → aviso recibido)</h3>
+      <div className="grupo-latencias">
+        {nuevas.map((g) => (
+          <div key={g.destinatario} className="latencia">
+            <div className="tenue pequeno">{DESTINATARIO[g.destinatario]}</div>
+            <div>
+              mediana <span className="mono">{segundos(g.entrega.mediana_s)}</span> · p95{' '}
+              <span className="mono">{segundos(g.entrega.p95_s)}</span>
+            </div>
+            <div className="tenue pequeno">
+              {g.entrega.n} de {g.total} recibidas
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 const RESOLUCION = { VOLVIO: 'El animal volvió', RESPUESTA_ADOPTANTE: 'Respondió el adoptante', CIERRE_FUNDACION: 'Cerrada por la fundación' };
 
 /** Botones para responder (simulando al adoptante) o cerrar una alerta con su verificación. */
@@ -77,13 +149,14 @@ export default function Alertas({ version, onAbrir }) {
         </label>
         <div className="grupo-botones exportes">
           <span className="tenue pequeno">Exportar (OE5)</span>
-          {['alertas', 'transiciones', 'posiciones'].map((t) => (
+          {['alertas', 'notificaciones', 'transiciones', 'posiciones'].map((t) => (
             <a key={t} className="boton" href={`/api/exportar/${t}.csv`}>
               <DownloadSimple size={14} aria-hidden="true" /> <span className="mono">{t}.csv</span>
             </a>
           ))}
         </div>
       </div>
+      <ResumenLatencia version={version} />
       {alertas?.length === 0 && <p className="tenue">Sin alertas.</p>}
       <div className="tabla-alertas" hidden={!alertas?.length}>
         {alertas?.map((a) => (
@@ -108,6 +181,7 @@ export default function Alertas({ version, onAbrir }) {
                   <dd>{RESOLUCION[a.causa_resolucion] ?? a.causa_resolucion} · <span className="mono">{duracion(a.creada_en, a.resuelta_en)}</span></dd>
                 </>
               )}
+              <Entregas notificaciones={a.notificaciones} />
               {a.resultado_verificacion && <><dt>Verificación</dt><dd>{VERIFICACION[a.resultado_verificacion]}</dd></>}
             </dl>
             <AccionesAlerta alerta={a} />
