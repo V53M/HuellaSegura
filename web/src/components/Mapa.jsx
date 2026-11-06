@@ -1,28 +1,67 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { ESPECIES, circulo, coloresEstado } from '../formato.js';
+import { circulo, coloresEstado } from '../formato.js';
+import { SVG_ESPECIE } from '../iconosMapa.js';
+import { alCambiarTema, esOscuro } from '../tema.js';
 
 const CALI = [-76.532, 3.4516];
 const VACIO = { type: 'FeatureCollection', features: [] };
 
-const ESTILO = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+// Mapas base grises de CARTO sobre OpenStreetMap (sin clave). La atribución viene en el propio estilo.
+const ESTILOS = {
+  claro: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  oscuro: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
 };
+const estiloActual = () => (esOscuro() ? ESTILOS.oscuro : ESTILOS.claro);
 
-function colorPorEstado() {
-  const c = coloresEstado();
+// Recorrido y edición en índigo (el primario de la interfaz), con un tono por tema.
+const TRAZO = { claro: '#3E63DD', oscuro: '#9EB1FF' };
+
+function colorPorEstado(oscuro) {
+  const c = coloresEstado(oscuro);
   return ['match', ['get', 'estado'], ...Object.entries(c).flat(), c.DENTRO];
+}
+
+/** Añade nuestras fuentes y capas. Se llama en cada 'style.load', porque setStyle borra lo que no es del estilo base. */
+function agregarCapas(m) {
+  const oscuro = esOscuro();
+  const color = colorPorEstado(oscuro);
+  const trazo = oscuro ? TRAZO.oscuro : TRAZO.claro;
+  // Zonas y recorridos debajo de las etiquetas del mapa base, para que los nombres de calles sigan legibles.
+  const primeraEtiqueta = m.getStyle().layers.find((l) => l.type === 'symbol')?.id;
+
+  m.addSource('zonas', { type: 'geojson', data: VACIO });
+  m.addSource('recorrido', { type: 'geojson', data: VACIO });
+  m.addSource('edicion', { type: 'geojson', data: VACIO });
+  m.addLayer({
+    id: 'zonas-relleno', type: 'fill', source: 'zonas',
+    paint: { 'fill-color': color, 'fill-opacity': ['case', ['get', 'seleccionada'], 0.22, 0.1] },
+  }, primeraEtiqueta);
+  m.addLayer({
+    id: 'zonas-borde', type: 'line', source: 'zonas',
+    paint: { 'line-color': color, 'line-width': ['case', ['get', 'seleccionada'], 2, 1.25] },
+  }, primeraEtiqueta);
+  m.addLayer({
+    id: 'recorrido-linea', type: 'line', source: 'recorrido', filter: ['==', ['geometry-type'], 'LineString'],
+    paint: { 'line-color': trazo, 'line-width': 2, 'line-opacity': 0.85 },
+  }, primeraEtiqueta);
+  m.addLayer({
+    id: 'recorrido-puntos', type: 'circle', source: 'recorrido', filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-radius': 2.5,
+      'circle-color': ['case', ['get', 'valida'], trazo, oscuro ? '#696E77' : '#8B8D98'],
+      'circle-stroke-color': oscuro ? '#111113' : '#FFFFFF', 'circle-stroke-width': 1,
+    },
+  });
+  m.addLayer({
+    id: 'edicion-relleno', type: 'fill', source: 'edicion',
+    paint: { 'fill-color': trazo, 'fill-opacity': 0.14 },
+  });
+  m.addLayer({
+    id: 'edicion-borde', type: 'line', source: 'edicion',
+    paint: { 'line-color': trazo, 'line-width': 2, 'line-dasharray': [2, 1.5] },
+  });
 }
 
 /**
@@ -35,60 +74,35 @@ export default function Mapa({ seguimiento, seleccionId, onSeleccionar, recorrid
   const marcadores = useRef(new Map());
   const clickRef = useRef(onClickMapa);
   const seleccionarRef = useRef(onSeleccionar);
-  const [listo, setListo] = useState(false);
+  // Sube cada vez que el estilo termina de cargar (inicio y cambio de tema) para volver a volcar los datos.
+  const [estilo, setEstilo] = useState(0);
   const encuadrado = useRef(false);
   clickRef.current = onClickMapa;
   seleccionarRef.current = onSeleccionar;
 
   useEffect(() => {
-    const m = new maplibregl.Map({ container: contenedor.current, style: ESTILO, center: CALI, zoom: 12 });
+    const m = new maplibregl.Map({
+      container: contenedor.current, style: estiloActual(), center: CALI, zoom: 12,
+      attributionControl: { compact: true },
+    });
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     m.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
-    m.on('load', () => {
-      const color = colorPorEstado();
-      m.addSource('zonas', { type: 'geojson', data: VACIO });
-      m.addSource('recorrido', { type: 'geojson', data: VACIO });
-      m.addSource('edicion', { type: 'geojson', data: VACIO });
-      m.addLayer({
-        id: 'zonas-relleno', type: 'fill', source: 'zonas',
-        paint: { 'fill-color': color, 'fill-opacity': ['case', ['get', 'seleccionada'], 0.28, 0.14] },
-      });
-      m.addLayer({
-        id: 'zonas-borde', type: 'line', source: 'zonas',
-        paint: { 'line-color': color, 'line-width': ['case', ['get', 'seleccionada'], 3, 1.5] },
-      });
-      m.addLayer({
-        id: 'recorrido-linea', type: 'line', source: 'recorrido', filter: ['==', ['geometry-type'], 'LineString'],
-        paint: { 'line-color': '#1f4fa8', 'line-width': 2.5, 'line-opacity': 0.75 },
-      });
-      m.addLayer({
-        id: 'recorrido-puntos', type: 'circle', source: 'recorrido', filter: ['==', ['geometry-type'], 'Point'],
-        paint: {
-          'circle-radius': 3,
-          'circle-color': ['case', ['get', 'valida'], '#1f4fa8', '#999999'],
-          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1,
-        },
-      });
-      m.addLayer({
-        id: 'edicion-relleno', type: 'fill', source: 'edicion',
-        paint: { 'fill-color': '#1f4fa8', 'fill-opacity': 0.18 },
-      });
-      m.addLayer({
-        id: 'edicion-borde', type: 'line', source: 'edicion',
-        paint: { 'line-color': '#1f4fa8', 'line-width': 2.5, 'line-dasharray': [2, 1.5] },
-      });
-      m.on('click', 'zonas-relleno', (e) => {
-        if (clickRef.current) return;
-        seleccionarRef.current?.(e.features[0].properties.id);
-      });
-      m.on('click', (e) => clickRef.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng }));
-      setListo(true);
+    m.on('style.load', () => {
+      agregarCapas(m);
+      setEstilo((n) => n + 1);
     });
+    m.on('click', 'zonas-relleno', (e) => {
+      if (clickRef.current) return;
+      seleccionarRef.current?.(e.features[0].properties.id);
+    });
+    m.on('click', (e) => clickRef.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng }));
     mapa.current = m;
+    const dejarDeEscuchar = alCambiarTema(() => m.setStyle(estiloActual()));
     // El mapa sigue montado cuando se cambia de pestaña; al volver a mostrarse debe recalcular su tamaño.
     const observador = new ResizeObserver(() => m.resize());
     observador.observe(contenedor.current);
     return () => {
+      dejarDeEscuchar();
       observador.disconnect();
       m.remove();
     };
@@ -97,7 +111,7 @@ export default function Mapa({ seguimiento, seleccionId, onSeleccionar, recorrid
   // Zonas y marcadores de última posición.
   useEffect(() => {
     const m = mapa.current;
-    if (!listo) return;
+    if (!estilo) return;
     const conZona = seguimiento.filter((s) => s.zona_lat != null);
     m.getSource('zonas').setData({
       type: 'FeatureCollection',
@@ -128,9 +142,10 @@ export default function Mapa({ seguimiento, seleccionId, onSeleccionar, recorrid
       el.dataset.estado = s.estado;
       el.classList.toggle('seleccionado', s.adopcion_id === seleccionId);
       el.title = `${s.animal} · ${s.estado}`;
+      el.setAttribute('aria-label', `${s.animal}, ${s.estado}`);
       const icono = document.createElement('span');
       icono.className = 'marcador-icono';
-      icono.textContent = ESPECIES[s.especie] ?? '🐾';
+      icono.innerHTML = SVG_ESPECIE[s.especie] ?? SVG_ESPECIE.OTRO; // SVG estático del paquete, nunca datos del usuario
       const nombre = document.createElement('span');
       nombre.className = 'marcador-nombre';
       nombre.textContent = s.animal;
@@ -150,11 +165,11 @@ export default function Mapa({ seguimiento, seleccionId, onSeleccionar, recorrid
       m.fitBounds(b, { padding: 80, maxZoom: 15, duration: 0 });
       encuadrado.current = true;
     }
-  }, [listo, seguimiento, seleccionId]);
+  }, [estilo, seguimiento, seleccionId]);
 
   // Recorrido del animal seleccionado.
   useEffect(() => {
-    if (!listo) return;
+    if (!estilo) return;
     const pts = recorrido ?? [];
     mapa.current.getSource('recorrido').setData({
       type: 'FeatureCollection',
@@ -165,24 +180,24 @@ export default function Mapa({ seguimiento, seleccionId, onSeleccionar, recorrid
         ...pts.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lon, p.lat] }, properties: { valida: p.valida } })),
       ],
     });
-  }, [listo, recorrido]);
+  }, [estilo, recorrido]);
 
   // Zona en edición.
   useEffect(() => {
-    if (!listo) return;
+    if (!estilo) return;
     mapa.current.getSource('edicion').setData(
       edicion?.lat != null
         ? { type: 'Feature', geometry: circulo(edicion.lon, edicion.lat, edicion.radio_m) }
         : VACIO,
     );
     mapa.current.getCanvas().style.cursor = onClickMapa ? 'crosshair' : '';
-  }, [listo, edicion, onClickMapa]);
+  }, [estilo, edicion, onClickMapa]);
 
   // Centrar en el animal seleccionado cuando se pide.
   useEffect(() => {
-    if (!listo || !enfoque) return;
+    if (!estilo || !enfoque) return;
     mapa.current.flyTo({ center: [enfoque.lon, enfoque.lat], zoom: Math.max(mapa.current.getZoom(), 15.5), duration: 600 });
-  }, [listo, enfoque]);
+  }, [enfoque]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={contenedor} className="mapa" />;
 }

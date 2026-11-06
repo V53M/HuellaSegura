@@ -1,4 +1,4 @@
-// Máquina de estados del seguimiento (OE3, CLAUDE.md §5).
+// Máquina de estados del seguimiento (OE3, contexto del proyecto, §5).
 // Función pura: no toca la BD ni el reloj. Recibe el estado actual, los parámetros de la fundación,
 // la excepción relevante y un evento; devuelve el estado nuevo, las transiciones y las acciones.
 // Todos los tiempos van en milisegundos desde epoch.
@@ -94,7 +94,8 @@ export function evaluar(ctx, evento) {
         if (excepcionVigente(t)) {
           cambiarEfectivo(E.EXCEPCION, 'EXCEPCION_DECLARADA');
         } else if (t - s.fuera_desde >= p.umbral_permanencia_min * MIN) {
-          acciones.push({ tipo: 'CREAR_ALERTA', fuera_desde: s.fuera_desde });
+          // cumplido_en: instante exacto en que se superó el umbral; la latencia de la alerta (OE5) se mide desde aquí.
+          acciones.push({ tipo: 'CREAR_ALERTA', fuera_desde: s.fuera_desde, cumplido_en: s.fuera_desde + p.umbral_permanencia_min * MIN });
           s.alerta_desde = t;
           cambiarEfectivo(E.ALERTA, 'UMBRAL_SUPERADO');
         }
@@ -109,7 +110,7 @@ export function evaluar(ctx, evento) {
         break;
       case E.ALERTA:
         if (t - s.alerta_desde >= p.horas_para_escalar * HORA) {
-          acciones.push({ tipo: 'ESCALAR_ALERTA' });
+          acciones.push({ tipo: 'ESCALAR_ALERTA', cumplido_en: s.alerta_desde + p.horas_para_escalar * HORA });
           cambiarEfectivo(E.ESCALADA, 'SIN_RESPUESTA_ADOPTANTE');
         }
         break;

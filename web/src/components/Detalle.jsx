@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, CheckCircle, Crosshair, PencilSimple, Siren, Warning } from '@phosphor-icons/react';
 import { api } from '../api.js';
-import { ESPECIES, MOTIVOS, causa, duracion, fechaHora, hace } from '../formato.js';
-import { Bateria, Estado } from './comunes.jsx';
+import { MOTIVOS, causa, duracion, fechaHora, hace } from '../formato.js';
+import { Bateria, Estado, IconoEspecie } from './comunes.jsx';
 import { AccionesAlerta } from './Alertas.jsx';
 
 /** Expediente de evidencia de una adopción: estado actual, acciones y bitácora. */
@@ -24,8 +25,8 @@ export default function Detalle({ adopcionId, version, parametros, horas, onHora
     return () => clearInterval(i);
   }, []);
 
-  if (error) return <div className="panel-contenido"><p className="error">{error}</p></div>;
-  if (!d) return <div className="panel-contenido"><p className="tenue">Cargando…</p></div>;
+  if (error) return <div className="panel-contenido"><p className="error bloque">{error}</p></div>;
+  if (!d) return <div className="panel-contenido"><p className="tenue bloque">Cargando…</p></div>;
 
   const alertaAbierta = d.alertas.find((a) => !a.resuelta_en);
   const umbralMs = (parametros?.umbral_permanencia_min ?? 0) * 60_000;
@@ -34,58 +35,89 @@ export default function Detalle({ adopcionId, version, parametros, horas, onHora
   return (
     <div className="panel-contenido">
       <div className="panel-cabecera">
-        <button className="boton fantasma" onClick={onVolver}>← Volver</button>
+        <button className="boton fantasma" onClick={onVolver}>
+          <ArrowLeft size={14} aria-hidden="true" /> Volver
+        </button>
         <div className="grupo-botones">
-          {d.lat != null && <button className="boton" onClick={() => onCentrar({ lat: d.lat, lon: d.lon })}>Centrar</button>}
-          <button className="boton" onClick={onEditarZona}>Editar zona</button>
+          {d.lat != null && (
+            <button className="boton" onClick={() => onCentrar({ lat: d.lat, lon: d.lon })}>
+              <Crosshair size={14} aria-hidden="true" /> Centrar
+            </button>
+          )}
+          <button className="boton" onClick={onEditarZona}>
+            <PencilSimple size={14} aria-hidden="true" /> Editar zona
+          </button>
         </div>
       </div>
 
-      <h2 className="titulo-animal">
-        <span>{ESPECIES[d.especie]}</span> {d.animal}
-      </h2>
-      <div className="estado-grande">
-        <Estado estado={d.estado} />
-        <span className="tenue pequeno">desde {fechaHora(d.estado_desde)} · {duracion(d.estado_desde)}</span>
-        {d.estado === 'SIN_SEÑAL' && d.estado_previo && (
-          <span className="pequeno">Antes de perder la señal: <Estado estado={d.estado_previo} corto /></span>
-        )}
-      </div>
-
-      {consumido != null && (
-        <div className="umbral">
-          <div className="umbral-barra"><span style={{ width: `${consumido * 100}%` }} /></div>
-          <span className="pequeno">
-            Fuera hace {duracion(d.fuera_desde)} de un umbral de {parametros.umbral_permanencia_min} min
-          </span>
+      {!d.consentimiento_vigente && (
+        <div className="bloque">
+          <p className="aviso">
+            <strong>Seguimiento detenido.</strong> El adoptante no tiene una autorización de datos vigente: no se guardan
+            posiciones ni se generan alertas hasta que la autorice de nuevo.
+          </p>
         </div>
       )}
 
+      <div className="bloque">
+        <h2 className="titulo-animal">
+          <IconoEspecie especie={d.especie} size={20} /> {d.animal}
+        </h2>
+        <div className="estado-grande" style={{ marginTop: 6 }}>
+          <Estado estado={d.estado} />
+          <span className="tenue pequeno">
+            desde <span className="mono">{fechaHora(d.estado_desde)}</span> · <span className="mono">{duracion(d.estado_desde)}</span>
+          </span>
+          {d.estado === 'SIN_SEÑAL' && d.estado_previo && (
+            <span className="pequeno tenue">Antes de perder la señal: <Estado estado={d.estado_previo} corto /></span>
+          )}
+        </div>
+
+        {consumido != null && (
+          <div className="umbral" style={{ marginTop: 10 }}>
+            <div className="umbral-barra"><span style={{ width: `${consumido * 100}%` }} /></div>
+            <span className="pequeno tenue">
+              Fuera hace <span className="mono">{duracion(d.fuera_desde)}</span> de un umbral de{' '}
+              <span className="mono">{parametros.umbral_permanencia_min} min</span>
+            </span>
+          </div>
+        )}
+      </div>
+
       {alertaAbierta && (
-        <div className={`caja-alerta ${alertaAbierta.escalada_en ? 'escalada' : ''}`}>
-          <strong>{alertaAbierta.escalada_en ? '⚠️ Caso escalado a la fundación' : '🚨 Alerta activa'}</strong>
-          <p className="pequeno">
-            Creada {hace(alertaAbierta.creada_en)}. Fuera de la zona desde {fechaHora(alertaAbierta.fuera_desde)}.
-            {alertaAbierta.respondida_en && ` El adoptante respondió: «${alertaAbierta.respuesta ?? 'sin comentario'}».`}
-          </p>
-          <AccionesAlerta alerta={alertaAbierta} />
+        <div className="bloque">
+          <div className={`caja-alerta ${alertaAbierta.escalada_en ? 'escalada' : ''}`}>
+            <strong>
+              {alertaAbierta.escalada_en
+                ? <><Warning size={16} weight="fill" aria-hidden="true" /> Caso escalado a la fundación</>
+                : <><Siren size={16} weight="fill" aria-hidden="true" /> Alerta activa</>}
+            </strong>
+            <p className="pequeno">
+              Creada <span className="mono">{hace(alertaAbierta.creada_en)}</span>. Fuera de la zona desde{' '}
+              <span className="mono">{fechaHora(alertaAbierta.fuera_desde)}</span>.
+              {alertaAbierta.respondida_en && ` Respuesta del adoptante: «${alertaAbierta.respuesta ?? 'sin comentario'}».`}
+            </p>
+            <AccionesAlerta alerta={alertaAbierta} />
+          </div>
         </div>
       )}
 
       <dl className="datos">
-        <div><dt>Distancia al centro</dt><dd>{d.distancia_m != null ? `${Math.round(d.distancia_m)} m` : '—'} <span className="tenue">/ radio {Math.round(d.radio_m ?? 0)} m</span></dd></div>
-        <div><dt>Último reporte</dt><dd>{hace(d.ultimo_reporte)}</dd></div>
+        <div><dt>Distancia al centro</dt><dd><span className="mono">{d.distancia_m != null ? `${Math.round(d.distancia_m)} m` : '—'}</span> <span className="tenue mono">/ {Math.round(d.radio_m ?? 0)} m</span></dd></div>
+        <div><dt>Último reporte</dt><dd className="mono">{hace(d.ultimo_reporte)}</dd></div>
         <div><dt>Batería</dt><dd><Bateria pct={d.bateria_pct} /></dd></div>
-        <div><dt>Precisión</dt><dd>{d.precision_m != null ? `${Math.round(d.precision_m)} m` : `no reportada (se usa ${parametros?.error_m_respaldo} m)`}</dd></div>
-        <div><dt>Collar</dt><dd>{d.dispositivo_uid ?? 'sin asignar'}</dd></div>
-        <div><dt>Peso</dt><dd>{d.peso_kg} kg</dd></div>
+        <div><dt>Precisión</dt><dd>{d.precision_m != null ? <span className="mono">{Math.round(d.precision_m)} m</span> : <span className="tenue">No reportada · respaldo <span className="mono">{parametros?.error_m_respaldo} m</span></span>}</dd></div>
+        <div><dt>Collar</dt><dd className="mono">{d.dispositivo_uid ?? 'sin asignar'}</dd></div>
+        <div><dt>Peso</dt><dd><span className="mono">{d.peso_kg}</span> kg</dd></div>
         <div><dt>Adoptante</dt><dd>{d.adoptante}<br /><span className="tenue pequeno">{d.telefono} · {d.direccion}</span></dd></div>
-        <div><dt>Entregado</dt><dd>{new Date(d.fecha_entrega).toLocaleDateString('es-CO')}</dd></div>
+        <div><dt>Entregado</dt><dd className="mono">{new Date(d.fecha_entrega).toLocaleDateString('es-CO')}</dd></div>
       </dl>
 
       <FormExcepcion adopcionId={d.adopcion_id} vigente={d.excepcion_vigente} />
 
-      <section className="seccion">
+      <DatosPersonales adopcionId={d.adopcion_id} version={version} />
+
+      <section className="bloque">
         <div className="seccion-cabecera">
           <h3>Recorrido en el mapa</h3>
           <select value={horas} onChange={(e) => onHoras(Number(e.target.value))}>
@@ -97,28 +129,32 @@ export default function Detalle({ adopcionId, version, parametros, horas, onHora
         </div>
       </section>
 
-      <section className="seccion">
+      <section className="bloque">
         <h3>Bitácora de estados</h3>
-        {d.transiciones.length === 0 && <p className="tenue pequeno">Sin cambios de estado todavía.</p>}
+        {d.transiciones.length === 0 && <p className="tenue pequeno">Sin cambios de estado.</p>}
         <ol className="bitacora">
           {d.transiciones.map((t) => (
             <li key={t.id}>
-              <span className="bitacora-hora tenue pequeno">{fechaHora(t.ocurrida_en)}</span>
+              <span className="bitacora-hora mono">{fechaHora(t.ocurrida_en)}</span>
               <span className="bitacora-cambio">
-                <Estado estado={t.desde} corto /> → <Estado estado={t.hacia} corto />
+                <Estado estado={t.desde} corto />
+                <ArrowRight className="flecha" size={12} aria-hidden="true" />
+                <Estado estado={t.hacia} corto />
               </span>
-              <span className="pequeno">{causa(t.causa)}</span>
+              <span className="pequeno tenue">{causa(t.causa)}</span>
             </li>
           ))}
         </ol>
       </section>
 
       {d.excepciones.length > 0 && (
-        <section className="seccion">
+        <section className="bloque">
           <h3>Excepciones declaradas</h3>
           <ul className="simple pequeno">
             {d.excepciones.map((x) => (
-              <li key={x.id}>{MOTIVOS[x.motivo]}: {fechaHora(x.inicio)} → {fechaHora(x.fin)}</li>
+              <li key={x.id}>
+                {MOTIVOS[x.motivo]}: <span className="mono">{fechaHora(x.inicio)} → {fechaHora(x.fin)}</span>
+              </li>
             ))}
           </ul>
         </section>
@@ -147,14 +183,16 @@ function FormExcepcion({ adopcionId, vigente }) {
   };
 
   return (
-    <section className="seccion">
+    <section className="bloque">
       <h3>Excepción declarada</h3>
       {vigente ? (
-        <p className="pequeno">
-          ✅ {MOTIVOS[vigente.motivo]} vigente hasta {fechaHora(vigente.fin)} ({hace(vigente.fin)}).
+        <p className="vigente pequeno">
+          <CheckCircle className="icono" size={14} weight="fill" aria-hidden="true" />
+          {MOTIVOS[vigente.motivo]} vigente hasta <span className="mono">{fechaHora(vigente.fin)}</span>{' '}
+          <span className="tenue">({hace(vigente.fin)})</span>
         </p>
       ) : (
-        <p className="tenue pequeno">Ninguna vigente.</p>
+        <p className="tenue pequeno" style={{ margin: '0 0 8px' }}>Ninguna vigente.</p>
       )}
       <form className="fila-form" onSubmit={enviar}>
         <select value={motivo} onChange={(e) => setMotivo(e.target.value)}>
@@ -170,8 +208,92 @@ function FormExcepcion({ adopcionId, vigente }) {
         </select>
         <button className="boton" disabled={enviando}>Declarar</button>
       </form>
-      <p className="tenue pequeno">Demo: en el producto final la declara el adoptante desde la app móvil.</p>
+      <p className="tenue pequeno" style={{ margin: '8px 0 0' }}>Para salidas que el adoptante avisó por teléfono. Desde la app la declara él mismo.</p>
       {error && <p className="error">{error}</p>}
+    </section>
+  );
+}
+
+const MEDIOS = { FORMATO_FIRMADO: 'Formato firmado', APP: 'Aceptada en la app' };
+
+/** Autorización de datos (Ley 1581) y cuenta del adoptante para la app móvil. */
+function DatosPersonales({ adopcionId, version }) {
+  const [c, setC] = useState(null);
+  const [error, setError] = useState(null);
+  const [mensaje, setMensaje] = useState(null);
+  const [acceso, setAcceso] = useState({ correo: '', contrasena: '' });
+  const [recarga, setRecarga] = useState(0);
+
+  useEffect(() => {
+    api.consentimiento(adopcionId).then(setC).catch((e) => setError(e.message));
+  }, [adopcionId, version, recarga]);
+
+  const hacer = async (fn, exito) => {
+    setError(null);
+    setMensaje(null);
+    try {
+      await fn();
+      setMensaje(exito);
+      setRecarga((n) => n + 1);
+      return true;
+    } catch (e) {
+      setError(e.message);
+      return false;
+    }
+  };
+
+  if (!c) return null;
+  const vigente = c.consentimientos.find((x) => !x.revocado_en);
+
+  const registrar = () => {
+    const ref = window.prompt('Referencia del formato firmado (dónde quedó archivado):', '');
+    if (ref !== null) hacer(() => api.registrarConsentimiento(adopcionId, ref), 'Autorización registrada. El seguimiento se reanuda.');
+  };
+  const revocar = () => {
+    const motivo = window.prompt('¿Cómo comunicó el adoptante la revocación? (llamada, correo, carta…)', '');
+    if (motivo) hacer(() => api.revocarConsentimiento(adopcionId, motivo), 'Autorización revocada. El seguimiento se detuvo.');
+  };
+  const crearAcceso = (e) => {
+    e.preventDefault();
+    hacer(() => api.crearAcceso(adopcionId, acceso.correo, acceso.contrasena), 'Cuenta lista. Entregue al adoptante el correo y la contraseña temporal.')
+      .then((ok) => ok && setAcceso({ correo: '', contrasena: '' }));
+  };
+
+  return (
+    <section className="bloque">
+      <h3>Datos personales (Ley 1581)</h3>
+      {vigente ? (
+        <p className="vigente pequeno">
+          <CheckCircle className="icono" size={14} weight="fill" aria-hidden="true" />
+          Autorización vigente · {MEDIOS[vigente.medio]} el <span className="mono">{fechaHora(vigente.aceptado_en)}</span>
+          {vigente.version_politica !== c.politica_vigente && <span className="tenue"> (versión anterior de la política)</span>}
+          {vigente.evidencia && vigente.medio === 'FORMATO_FIRMADO' && <span className="tenue"> · {vigente.evidencia}</span>}
+        </p>
+      ) : (
+        <p className="error pequeno">Sin autorización vigente.</p>
+      )}
+      <div className="grupo-botones" style={{ marginBottom: 12 }}>
+        {vigente
+          ? <button className="boton" onClick={revocar}>Registrar revocación</button>
+          : <button className="boton" onClick={registrar}>Registrar formato firmado</button>}
+      </div>
+
+      <h3>Acceso a la app</h3>
+      {c.acceso ? (
+        <p className="pequeno" style={{ margin: '0 0 8px' }}>
+          <span className="mono">{c.acceso.correo}</span>{' '}
+          <span className="tenue">· {c.acceso.ultimo_acceso ? `último ingreso ${hace(c.acceso.ultimo_acceso)}` : 'aún no ha ingresado'}</span>
+        </p>
+      ) : (
+        <p className="tenue pequeno" style={{ margin: '0 0 8px' }}>El adoptante todavía no tiene cuenta.</p>
+      )}
+      <form className="fila-form" onSubmit={crearAcceso}>
+        <input type="email" required placeholder="Correo del adoptante" value={acceso.correo} onChange={(e) => setAcceso({ ...acceso, correo: e.target.value })} />
+        <input type="text" required minLength={8} placeholder="Contraseña temporal" autoComplete="off" value={acceso.contrasena} onChange={(e) => setAcceso({ ...acceso, contrasena: e.target.value })} />
+        <button className="boton">{c.acceso ? 'Restablecer' : 'Crear cuenta'}</button>
+      </form>
+      {mensaje && <p className="exito pequeno">{mensaje}</p>}
+      {error && <p className="error pequeno">{error}</p>}
     </section>
   );
 }
