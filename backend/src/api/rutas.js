@@ -12,6 +12,7 @@ import { POLITICA } from '../auth/politica.js';
 import { SQL_CONSENTIDO, registrarConsentimiento, registrarYAvisar, revocarConsentimiento } from '../auth/consentimiento.js';
 import { acusarNotificacion, cerrarAlerta, declararExcepcion, responderAlerta } from './acciones.js';
 import { ErrorApi, manejar, numero } from './comunes.js';
+import { crearLimitador } from '../auth/limite.js';
 
 export const api = Router();
 api.use(autenticar(), exigirRol(ROLES_FUNDACION));
@@ -55,11 +56,12 @@ api.put('/parametros', soloAdmin, manejar(async (req) => {
       WHERE fundacion_id = $1 RETURNING *`,
     [
       fid(req),
-      numero(b.radio_m_defecto, 'radio_m_defecto', { min: 10 }),
-      numero(b.umbral_permanencia_min, 'umbral_permanencia_min', { min: 0.1 }),
-      numero(b.horas_para_escalar, 'horas_para_escalar', { min: 0.01 }),
-      numero(b.min_sin_senal, 'min_sin_senal', { min: 0.1 }),
-      numero(b.error_m_respaldo, 'error_m_respaldo', { min: 0 }),
+      // Mínimos y máximos coherentes con los del alta de adopción: un valor absurdo dejaría el motor sin alertar nunca.
+      numero(b.radio_m_defecto, 'radio_m_defecto', { min: 10, max: 5000 }),
+      numero(b.umbral_permanencia_min, 'umbral_permanencia_min', { min: 0.1, max: 24 * 60 }),
+      numero(b.horas_para_escalar, 'horas_para_escalar', { min: 0.01, max: 24 * 31 }),
+      numero(b.min_sin_senal, 'min_sin_senal', { min: 0.1, max: 24 * 60 }),
+      numero(b.error_m_respaldo, 'error_m_respaldo', { min: 0, max: 1000 }),
       b.usar_histeresis !== false,
     ],
   );
@@ -196,7 +198,15 @@ api.put('/adopciones/:id/zona', manejar(async (req) => {
 }));
 
 // Ubicar la zona segura escribiendo la dirección del adoptante (o coordenadas) en vez de marcarla en el mapa.
+// Límite por usuario: las consultas van a Nominatim/Overpass, que piden no más de 1 por segundo, y una
+// cola sin cotejo congestiona la API.
+const limiteGeocodificacion = crearLimitador({ maxFallos: 20, ventanaMs: 60_000 });
 api.get('/geocodificar', manejar(async (req) => {
+  const espera = limiteGeocodificacion.espera(`geo:${req.usuario.id}`);
+  if (espera > 0) {
+    throw new ErrorApi(429, `Demasiadas consultas de dirección. Espere ${espera} s.`);
+  }
+  limiteGeocodificacion.fallo(`geo:${req.usuario.id}`);
   try {
     return await geocodificar(req.query.q);
   } catch (err) {
@@ -416,7 +426,9 @@ const celdaCsv = (v) => {
 api.get('/exportar/:tabla.csv', manejar(async (req, res) => {
   const sql = EXPORTES[req.params.tabla];
   if (!sql) throw new ErrorApi(404, 'Exporte no disponible');
-  const { rows, fields } = await consulta(sql, [fid(req)]);
+  // Sin cota, un export crecería sin límite con el tiempo; se pagina con ?limite= (100 000 filas como máximo).
+  const limite = numero(req.query.limite ?? 10000, 'limite', { min: 1, max: 100000 });
+  const { rows, fields } = await consulta(`${sql} LIMIT ${limite}`, [fid(req)]);
   const columnas = fields.map((f) => f.name);
   const csv = [columnas.join(','), ...rows.map((r) => columnas.map((c) => celdaCsv(r[c])).join(','))].join('\n');
   res.type('text/csv').attachment(`${req.params.tabla}.csv`).send(csv);

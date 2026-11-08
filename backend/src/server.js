@@ -1,6 +1,7 @@
 import { app } from './app.js';
 import { tick } from './motor/servicio.js';
 import { iniciarNotificaciones } from './notificaciones/notificaciones.js';
+import { podarSesiones } from './auth/sesiones.js';
 
 iniciarNotificaciones();
 
@@ -21,3 +22,12 @@ setInterval(async () => {
     enCurso = false;
   }
 }, cadaMs);
+
+// La tabla `sesion` no debe crecer sin límite: cada hora se borran las sesiones vencidas hace más de una semana.
+setInterval(async () => {
+  try {
+    await podarSesiones();
+  } catch (err) {
+    console.error('[podar-sesiones]', err);
+  }
+}, 60 * 60_000);

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<!--
+  Traccar §7.1 — configuración de HuellaSegura.
+
+  Los collares TK911 (y sus clones) hablan h02 (5013), gt06 (5023) o gps103 (5001) según la
+  variante; osmand (5055) sirve para el simulador y para Traccar Client. Verifique el protocolo
+  real con https://www.traccar.org/identify-protocol/ si el collar no conecta.
+
+  Traccar reenvía posiciones (forward.type=json → {position, device}) y eventos
+  (event.forward.type=json → {event, position, device}) a la API de HuellaSegura.
+  Las cabeceras X-Traccar-Secret se inyectan desde el entorno de docker-compose
+  (FORWARD_HEADER / EVENT_FORWARD_HEADER) para no dejar secretos en el repositorio.
+-->
+<properties>
+
+  <!-- URL de la API (la API corre en el host durante el desarrollo). -->
+  <entry key="forward.type">json</entry>
+  <entry key="forward.url">http://host.docker.internal:3000/ingesta/posiciones</entry>
+  <entry key="forward.retry.enable">true</entry>
+
+  <entry key="event.forward.type">json</entry>
+  <entry key="event.forward.url">http://host.docker.internal:3000/ingesta/eventos</entry>
+
+  <!-- deviceOnline / deviceOffline / deviceUnknown → /ingesta/eventos → SIN_SEÑAL del motor. -->
+  <entry key="event.status.enable">true</entry>
+
+  <!-- Protocolos de los collares del piloto. -->
+  <entry key="osmand.port">5055</entry>
+  <entry key="h02.port">5013</entry>
+  <entry key="gt06.port">5023</entry>
+  <entry key="gps103.port">5001</entry>
+
+  <!-- La detección de geocercas de Traccar no se usa: la decide el motor de HuellaSegura (§5).
+       Evitamos duplicar alertas y dejamos los filtros de Traccar por defecto. -->
+
+</properties>

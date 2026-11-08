@@ -21,6 +21,9 @@ const API = args.api ?? 'http://localhost:3000';
 const DESTINO = args.destino ?? `${API}/ingesta/osmand`;
 const INTERVALO_S = Number(args.intervalo ?? 5);
 const PRECISION = args.precision ? Number(args.precision) : null; // el TK911 Pro puede no reportarla
+// Si el backend exige INGESTA_SECRET, se pasa en X-Ingesta-Secret (o --secreto <valor>).
+const SECRETO = args.secreto ?? process.env.INGESTA_SECRET ?? null;
+const cabecerasIngesta = SECRETO ? { 'X-Ingesta-Secret': String(SECRETO) } : {};
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -113,7 +116,7 @@ async function simular(uid, escenario) {
       timestamp: String(Math.floor(Date.now() / 1000)), batt: bateria.toFixed(0),
       ...(PRECISION != null ? { accuracy: String(PRECISION) } : {}),
     });
-    const res = await fetch(`${DESTINO}?${q}`, { method: 'POST' });
+    const res = await fetch(`${DESTINO}?${q}`, { method: 'POST', headers: cabecerasIngesta });
     if (!res.ok) console.warn(`${etiqueta} envío ${i + 1}: HTTP ${res.status} ${await res.text()}`);
     if (args.verbose) console.log(`${etiqueta} ${i + 1}/${distancias.length} a ${d.toFixed(0)} m`);
     await esperar(INTERVALO_S * 1000);

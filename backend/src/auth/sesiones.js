@@ -58,3 +58,9 @@ export function cookieSesion(token, vence) {
   if (process.env.COOKIE_SEGURA === '1') partes.push('Secure');
   return partes.join('; ');
 }
+
+/** Borra las sesiones ya vencidas (más allá de una semana) para que la tabla no crezca sin límite. */
+export async function podarSesiones() {
+  const { rowCount } = await consulta(`DELETE FROM sesion WHERE vence_en < now() - interval '7 days'`);
+  return rowCount;
+}

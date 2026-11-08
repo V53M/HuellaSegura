@@ -10,10 +10,37 @@ export const ingesta = Router();
 
 const EVENTOS_CONEXION = new Set(['deviceOnline', 'deviceOffline', 'deviceUnknown']);
 
+let avisoSecreto = false;
+
+/** Traccar solo puede reenviar con el secreto configurado; si falta, avisamos en el log (503) en vez de un 401 mudo. */
 function exigirSecreto(req, res, next) {
   const secreto = process.env.TRACCAR_SECRET;
-  if (!secreto || req.get('X-Traccar-Secret') !== secreto) return res.status(401).end();
+  if (!secreto) {
+    if (!avisoSecreto) {
+      console.error('[ingesta] TRACCAR_SECRET no está definido: se rechazan las posiciones de Traccar (configúrelo en backend/.env)');
+      avisoSecreto = true;
+    }
+    return res.status(503).send('TRACCAR_SECRET no configurado');
+  }
+  if (req.get('X-Traccar-Secret') !== secreto) return res.status(401).end();
   next();
+}
+
+/**
+ * Ingesta directa OsmAnd (simulador / Traccar Client sin Traccar en medio).
+ * Si INGESTA_SECRET está definido se exige; si no, solo se acepta desde la propia máquina
+ * (cualquier host remoto podría inyectar posiciones falsas conociendo el uid del collar).
+ */
+export function accesoDirectoPermitido({ secreto = process.env.INGESTA_SECRET, cabecera = null, query = null, remoto = null } = {}) {
+  if (secreto) return cabecera === secreto || query === secreto;
+  return esLocal(remoto);
+}
+
+const esLocal = (ip) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+
+/** Rangos válidos: descarta tramas corruptas antes de tocar la base. */
+export function coordenadaValida(lat, lon) {
+  return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
 
 /** Inserta una posición de forma idempotente. Devuelve el id si la fila es nueva; null si ya existía. */
@@ -51,6 +78,7 @@ async function existeDispositivo(uid) {
 ingesta.post('/posiciones', exigirSecreto, async (req, res) => {
   const { position, device } = req.body ?? {};
   if (!position || !device?.uniqueId) return res.status(400).end();
+  if (!coordenadaValida(position.latitude, position.longitude)) return res.status(400).send('coordenadas inválidas');
   try {
     // Un collar no registrado se ignora con 200: si respondiéramos error, Traccar reintentaría para siempre.
     if (!(await existeDispositivo(device.uniqueId))) return res.status(200).json({ ignorada: true });
@@ -105,6 +133,12 @@ ingesta.all('/osmand', async (req, res) => {
   const lat = Number(q.lat);
   const lon = Number(q.lon);
   if (!q.id || !Number.isFinite(lat) || !Number.isFinite(lon)) return res.status(400).send('faltan id, lat o lon');
+  if (!coordenadaValida(lat, lon)) return res.status(400).send('coordenadas inválidas');
+  // El socket (no req.ip, que se falsifica con X-Forwarded-For) decide si viene de la propia máquina.
+  const remoto = req.socket?.remoteAddress ?? req.ip;
+  if (!accesoDirectoPermitido({ cabecera: req.get('X-Ingesta-Secret'), query: q.secreto, remoto })) {
+    return res.status(401).send('secreto de ingesta ausente o inválido');
+  }
   try {
     if (!(await existeDispositivo(q.id))) return res.status(404).send('dispositivo no registrado');
     const ts = q.timestamp ? (/^\d+$/.test(q.timestamp) ? new Date(Number(q.timestamp) * 1000) : new Date(q.timestamp)) : new Date();

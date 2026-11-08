@@ -53,7 +53,7 @@ export default function App({ usuario, onSalir }) {
 
   const editarZona = () => {
     const s = seguimiento.find((x) => x.adopcion_id === panel.id);
-    setZona({ lat: s?.zona_lat ?? null, lon: s?.zona_lon ?? null, radio_m: s?.radio_m ?? parametros.radio_m_defecto });
+    setZona({ lat: s?.zona_lat ?? null, lon: s?.zona_lon ?? null, radio_m: s?.radio_m ?? parametros?.radio_m_defecto ?? 120 });
     setPanel({ modo: 'zona', id: panel.id });
   };
 

@@ -27,6 +27,20 @@ export function clasificar(distanciaM, errorM, radioM, usarHisteresis = true) {
   return 'INCIERTO';
 }
 
+/**
+ * Igual que `clasificar`, pero a partir de los dos ST_DWithin que calcula PostGIS (§6):
+ *   dentro_con_margen  → distancia + error < radio  → DENTRO
+ *   !puede_estar_dentro → distancia − error > radio → FUERA
+ *   en medio            → INCIERTO (histéresis)
+ * Con histéresis desactivada usa el borde único en radio_m.
+ */
+export function clasificarLado({ distancia_m, radio_m, dentro_con_margen, puede_estar_dentro, usar_histeresis }) {
+  if (!usar_histeresis) return distancia_m > radio_m ? 'FUERA' : 'DENTRO';
+  if (dentro_con_margen) return 'DENTRO';
+  if (!puede_estar_dentro) return 'FUERA';
+  return 'INCIERTO';
+}
+
 /** Distancia Haversine en metros (respaldo de PostGIS; la usan el simulador y las pruebas). */
 export function distanciaM(lat1, lon1, lat2, lon2) {
   const R = 6_371_008.8;
@@ -54,7 +68,7 @@ export function estadoInicial(t) {
  * @param {object} ctx.params      { umbral_permanencia_min, horas_para_escalar, min_sin_senal, usar_histeresis }
  * @param {object|null} ctx.excepcion  la excepción más reciente que ya empezó: { inicio, fin }
  * @param {object} evento
- *   { tipo: 'POSICION', t, distancia_m, error_m, radio_m, valida }
+ *   { tipo: 'POSICION', t, distancia_m, error_m, radio_m, valida, lado? }
  *   { tipo: 'TICK', t }
  *   { tipo: 'EXCEPCION', t }                    el adoptante acaba de declarar una excepción
  *   { tipo: 'CONEXION', t, conexion }           deviceOnline | deviceOffline | deviceUnknown
@@ -161,7 +175,10 @@ export function evaluar(ctx, evento) {
         evaluarTiempo();
         break;
       }
-      aplicarLado(clasificar(evento.distancia_m, evento.error_m, evento.radio_m, p.usar_histeresis));
+      // El lado viene calculado por PostGIS (ST_DWithin) desde el servicio; sin él (pruebas, simulador
+      // directo) se clasifica aquí con Haversine.
+      const lado = evento.lado ?? clasificar(evento.distancia_m, evento.error_m, evento.radio_m, p.usar_histeresis);
+      aplicarLado(lado);
       break;
     }
 

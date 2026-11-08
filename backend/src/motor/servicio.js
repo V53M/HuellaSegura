@@ -2,7 +2,7 @@
 // Cada adopción se procesa en serie para que dos posiciones simultáneas no pisen el estado.
 import { consulta, enTransaccion } from '../db/db.js';
 import { bus } from '../eventos.js';
-import { estadoInicial, evaluar } from './motor.js';
+import { estadoInicial, evaluar, clasificarLado } from './motor.js';
 import { SQL_CONSENTIDO } from '../auth/consentimiento.js';
 
 // Sin consentimiento vigente (Ley 1581) el motor no evalúa posiciones, conexiones ni el paso del tiempo.
@@ -167,12 +167,23 @@ export async function procesarPosicion(uid, posicionId) {
   const t = ms(rows[0].fix_time);
   const adopcionId = await adopcionDeDispositivo(uid, t);
   if (!adopcionId) return null;
+  // Evaluación espacial en el servidor (§6): ST_DWithin con los dos márgenes del error GPS da el lado
+  // (DENTRO / FUERA / INCIERTO) sin calcular la distancia a mano; ST_DDistance queda solo como evidencia
+  // para la UI y el umbral de histéresis.
   const { rows: zona } = await consulta(
-    `SELECT z.radio_m, ST_Distance(p.geom, z.centro) AS distancia_m
-       FROM posicion p, zona_segura z WHERE p.id = $1 AND z.adopcion_id = $2`,
+    `SELECT z.radio_m, pf.usar_histeresis, COALESCE(p.precision_m, pf.error_m_respaldo) AS error_m,
+            ST_Distance(p.geom, z.centro) AS distancia_m,
+            ST_DWithin(p.geom, z.centro, GREATEST(z.radio_m - COALESCE(p.precision_m, pf.error_m_respaldo), 0)) AS dentro_con_margen,
+            ST_DWithin(p.geom, z.centro, z.radio_m + COALESCE(p.precision_m, pf.error_m_respaldo)) AS puede_estar_dentro
+       FROM posicion p
+       JOIN zona_segura z ON z.adopcion_id = $2
+       JOIN adopcion a ON a.id = z.adopcion_id
+       JOIN parametros_fundacion pf ON pf.fundacion_id = a.fundacion_id
+      WHERE p.id = $1`,
     [posicionId, adopcionId],
   );
   if (!zona[0]) return null; // sin zona definida no hay nada que evaluar
+  const lado = clasificarLado(zona[0]);
   return aplicar(
     adopcionId,
     t,
@@ -182,6 +193,7 @@ export async function procesarPosicion(uid, posicionId) {
       distancia_m: zona[0].distancia_m,
       error_m: rows[0].precision_m ?? cargado.errorRespaldo,
       radio_m: zona[0].radio_m,
+      lado,
       valida: rows[0].valida,
     }),
     posicionId,
