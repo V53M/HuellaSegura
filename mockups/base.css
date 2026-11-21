@@ -261,9 +261,48 @@ input, select {
 }
 input::placeholder { color: var(--muy-tenue); }
 input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario); }
-.campo { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--tenue); }
+.campo { display: flex; flex-direction: column; gap: 5px; flex: 1; font-size: 13px; color: var(--tenue); }
 .campo input, .campo select { color: var(--texto); }
 .interruptor { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--tenue); }
+
+/* ---------- Formularios con fieldsets ---------- */
+.formulario { display: flex; flex-direction: column; gap: 15px; padding: 16px 0; }
+.formulario fieldset {
+  border: 0; border-top: 1px solid var(--borde-suave); padding: 15px 0 0; margin: 0;
+  display: flex; flex-direction: column; gap: 11px; min-width: 0;
+}
+.formulario fieldset:first-child { border-top: 0; padding-top: 0; }
+.formulario legend {
+  font-size: 11px; font-weight: 650; color: var(--tenue); text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 0 0 11px; float: left; width: 100%;
+}
+input[type='range'] { width: 100%; height: auto; padding: 0; border: 0; accent-color: var(--primario); }
+
+.enlace {
+  border: 0; background: none; color: var(--texto); padding: 0;
+  font: inherit; font-weight: 600; cursor: pointer; text-align: left;
+}
+.enlace:hover { color: var(--primario); }
+
+.politica summary { cursor: pointer; color: var(--tenue); font-size: 13px; }
+.politica ul { margin: 9px 0 0; }
+
+/* ---------- Buscador de dirección (geocodificación) ---------- */
+.buscador { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; width: 100%; }
+.buscador-fila { display: flex; gap: 7px; width: 100%; }
+.buscador-fila input { flex: 1; }
+.ayuda { margin: 0; display: flex; align-items: center; gap: 6px; color: var(--tenue); font-size: 13px; }
+.candidatos { list-style: none; margin: 0; padding: 0; width: 100%; border: 1px solid var(--borde); border-radius: var(--radio-sm); overflow: hidden; }
+.candidatos li + li { border-top: 1px solid var(--borde-suave); }
+.candidato {
+  width: 100%; display: flex; flex-direction: column; gap: 3px; padding: 9px 11px;
+  border: 0; border-left: 3px solid transparent; background: var(--superficie);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.candidato:hover { background: var(--hover); }
+.candidato.elegido { border-left-color: var(--primario); background: var(--primario-suave); }
+.candidato-titulo { font-weight: 600; font-size: 13px; }
+.candidato-detalle { display: flex; justify-content: space-between; gap: 8px; color: var(--tenue); font-size: 12px; }
 
 /* =========================================================================
    Listas / filas tipo tabla
