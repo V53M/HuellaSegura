@@ -217,6 +217,9 @@ a { color: var(--primario); text-decoration: none; }
 .estado { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; color: var(--t, var(--texto)); white-space: nowrap; }
 .estado-punto { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
 
+.bateria { display: inline-flex; align-items: center; gap: 4px; color: var(--tenue); font-size: 12px; }
+.bateria.baja { color: var(--peligro); font-weight: 600; }
+
 .pastilla {
   display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px;
   border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
@@ -267,7 +270,8 @@ input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario
    ========================================================================= */
 .lista { list-style: none; margin: 0; padding: 0; }
 .encabezado-lista, .fila {
-  display: grid; align-items: center; column-gap: 12px; padding: 0 18px;
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center; column-gap: 12px; padding: 0 18px;
 }
 .encabezado-lista {
   height: 34px; font-size: 11px; font-weight: 600; color: var(--muy-tenue);
@@ -308,6 +312,8 @@ input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario
   background: var(--amber-2); border: 1px solid var(--amber-6); color: var(--amber-11);
   padding: 9px 12px; border-radius: var(--radio-sm); font-size: 13px;
 }
+.error { color: var(--peligro); }
+.exito { color: var(--exito); }
 
 /* =========================================================================
    Barra de actividad / gráficos sencillos (CSS puro)
@@ -358,6 +364,148 @@ input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario
 .conmutador-tema:hover { background: var(--hover); }
 
 /* =========================================================================
+   Vistas con panel lateral + área principal (seguimiento, expediente, zona)
+   ========================================================================= */
+.vista {
+  flex: none; height: calc(100vh - var(--barra));
+  display: grid; grid-template-columns: 400px 1fr; min-height: 0;
+}
+.lateral {
+  background: var(--superficie); border-right: 1px solid var(--borde-suave);
+  overflow-y: auto; min-height: 0;
+}
+.lateral-cabecera {
+  position: sticky; top: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  min-height: 52px; padding: 8px 16px;
+  background: var(--superficie); border-bottom: 1px solid var(--borde-suave);
+}
+.lateral-cabecera h2 { display: flex; align-items: center; gap: 8px; }
+
+.resumen-estados { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--borde-suave); }
+.resumen-estados .r {
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  border-right: 1px solid var(--borde-suave); border-bottom: 1px solid var(--borde-suave);
+}
+.resumen-estados .r:nth-child(3n) { border-right: 0; }
+.resumen-estados .r:nth-child(n+4) { border-bottom: 0; }
+.resumen-estados .r strong { font-size: 21px; font-weight: 650; line-height: 1; font-variant-numeric: tabular-nums; }
+.resumen-estados .r span { font-size: 11px; color: var(--tenue); display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* =========================================================================
+   Mapa (maqueta): fondo tipo CARTO Positron con retícula de vías
+   ========================================================================= */
+.mapa {
+  position: relative; overflow: hidden;
+  --mapa-tierra: #ece9e3;
+  --mapa-via: #f5f3ef;
+  --mapa-via-mayor: #ffffff;
+  --mapa-parque: #d7e8cf;
+  --mapa-agua: #cadcea;
+  background-color: var(--mapa-tierra);
+}
+.dark-theme .mapa {
+  --mapa-tierra: #1b1c1e;
+  --mapa-via: #232528;
+  --mapa-via-mayor: #2d3034;
+  --mapa-parque: #1d2b21;
+  --mapa-agua: #192531;
+}
+.mapa::before {
+  content: ''; position: absolute; inset: -20%; z-index: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 150px, var(--mapa-via-mayor) 150px 159px),
+    repeating-linear-gradient(90deg, transparent 0 150px, var(--mapa-via-mayor) 150px 159px),
+    repeating-linear-gradient(0deg, transparent 0 64px, var(--mapa-via) 64px 69px),
+    repeating-linear-gradient(90deg, transparent 0 64px, var(--mapa-via) 64px 69px);
+}
+.mapa::after {
+  content: ''; position: absolute; inset: -20%; z-index: 1; opacity: .6;
+  background-image: repeating-linear-gradient(38deg, transparent 0 260px, var(--mapa-via-mayor) 260px 274px);
+}
+.mapa-parque, .mapa-agua { position: absolute; z-index: 1; border-radius: 10px; }
+.mapa-parque { background: var(--mapa-parque); }
+.mapa-agua { background: var(--mapa-agua); border-radius: 40% 55% 48% 60%; }
+
+.zona-circulo {
+  position: absolute; z-index: 2; transform: translate(-50%, -50%);
+  width: 176px; height: 176px; border-radius: 50%;
+  background: rgb(99 102 241 / .13); border: 2px dashed rgb(99 102 241 / .85);
+}
+.zona-circulo.naranja { background: rgb(255 178 36 / .14); border-color: rgb(230 155 20 / .9); }
+
+.mapa-traza { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+
+.marcador {
+  position: absolute; z-index: 3; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  --c: var(--estado-dentro);
+}
+.marcador[data-estado='FUERA_EN_GRACIA'] { --c: var(--estado-gracia); }
+.marcador[data-estado='EXCEPCION'] { --c: var(--estado-excepcion); }
+.marcador[data-estado='ALERTA'] { --c: var(--estado-alerta); }
+.marcador[data-estado='ESCALADA'] { --c: var(--estado-escalada); }
+.marcador[data-estado='SIN_SEÑAL'] { --c: var(--estado-sinsenal); }
+.marcador .punto {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--c); color: #fff; border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / .35);
+}
+.dark-theme .marcador .punto { border-color: #0f0f11; }
+.marcador .nombre {
+  background: var(--superficie); color: var(--texto); border: 1px solid var(--borde);
+  font-size: 11px; font-weight: 650; padding: 1px 6px; line-height: 15px;
+  border-radius: 4px; white-space: nowrap; box-shadow: var(--sombra-1);
+}
+.marcador[data-estado='ALERTA'] .punto,
+.marcador[data-estado='ESCALADA'] .punto { animation: pulso-marcador 1.6s ease-out infinite; }
+.marcador.seleccionado .punto {
+  width: 34px; height: 34px;
+  box-shadow: 0 0 0 3px var(--primario), 0 1px 3px rgb(0 0 0 / .35);
+}
+@keyframes pulso-marcador {
+  0% { box-shadow: 0 1px 3px rgb(0 0 0 / .35), 0 0 0 0 var(--c); }
+  100% { box-shadow: 0 1px 3px rgb(0 0 0 / .35), 0 0 0 14px transparent; }
+}
+
+.mapa-ctrl {
+  position: absolute; top: 12px; right: 12px; z-index: 4;
+  display: flex; flex-direction: column; background: var(--superficie);
+  border: 1px solid var(--borde); border-radius: var(--radio-sm);
+  box-shadow: var(--sombra-1); overflow: hidden;
+}
+.mapa-ctrl button {
+  width: 30px; height: 30px; border: 0; background: none; color: var(--texto);
+  font-size: 17px; cursor: pointer; display: grid; place-items: center; line-height: 1;
+}
+.mapa-ctrl button + button { border-top: 1px solid var(--borde-suave); }
+.mapa-ctrl button:hover { background: var(--hover); }
+
+.mapa-leyenda {
+  position: absolute; left: 12px; top: 12px; z-index: 4;
+  background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio-sm);
+  box-shadow: var(--sombra-1); padding: 9px 11px; display: grid; gap: 7px; font-size: 11px;
+}
+.mapa-leyenda .l { display: flex; align-items: center; gap: 7px; color: var(--tenue); }
+.mapa-leyenda .pt { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+
+.mapa-inferior {
+  position: absolute; left: 12px; bottom: 12px; z-index: 4;
+  display: flex; align-items: center; gap: 8px;
+}
+.mapa-escala {
+  background: var(--superficie); border: 1px solid var(--borde); border-radius: 4px;
+  padding: 3px 7px; font-family: var(--mono); font-size: 10px; color: var(--tenue);
+  box-shadow: var(--sombra-1);
+}
+.mapa-creditos {
+  font-size: 10px; color: var(--tenue); background: rgb(255 255 255 / .72);
+  padding: 2px 6px; border-radius: 3px;
+}
+.dark-theme .mapa-creditos { background: rgb(0 0 0 / .5); }
+
+/* =========================================================================
    Responsive
    ========================================================================= */
 @media (max-width: 980px) {
@@ -371,4 +519,12 @@ input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario
   .barra-derecha .separador, .barra-derecha .fundacion { display: none; }
   .kpis { grid-template-columns: 1fr; }
   .pagina { padding: 20px 14px 40px; }
+}
+
+/* Vista partida: en pantallas pequeñas el mapa arriba y el panel debajo */
+@media (max-width: 900px) {
+  .vista { height: auto; grid-template-columns: 1fr; grid-template-rows: 54vh auto; }
+  .vista .mapa { grid-row: 1; min-height: 260px; }
+  .vista .lateral { grid-row: 2; border-right: 0; border-top: 1px solid var(--borde-suave); overflow: visible; }
+  .mapa-leyenda { display: none; }
 }
