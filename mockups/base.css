@@ -308,6 +308,7 @@ input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario
 .caja-alerta strong { display: flex; align-items: center; gap: 7px; color: var(--peligro); }
 .caja-alerta.escalada { border-color: var(--plum-6); border-left-color: var(--estado-escalada); background: var(--plum-2); }
 .caja-alerta.escalada strong { color: var(--plum-11); }
+.acciones-alerta { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; margin-top: 2px; }
 .aviso {
   background: var(--amber-2); border: 1px solid var(--amber-6); color: var(--amber-11);
   padding: 9px 12px; border-radius: var(--radio-sm); font-size: 13px;
@@ -504,6 +505,47 @@ input[type='checkbox'] { height: 15px; width: 15px; accent-color: var(--primario
   padding: 2px 6px; border-radius: 3px;
 }
 .dark-theme .mapa-creditos { background: rgb(0 0 0 / .5); }
+
+/* =========================================================================
+   Bloques del panel de expediente (detalle)
+   ========================================================================= */
+.bloque { padding: 15px 16px; border-bottom: 1px solid var(--borde-suave); }
+.bloque:last-child { border-bottom: 0; }
+.bloque h3 { margin: 0 0 10px; }
+
+.titulo-animal { font-size: 19px; font-weight: 650; display: flex; align-items: center; gap: 9px; letter-spacing: -0.015em; }
+.titulo-animal .icono { color: var(--tenue); }
+
+.estado-grande { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.estado-grande .estado { font-size: 15px; font-weight: 600; }
+.estado-grande .estado-punto { width: 11px; height: 11px; }
+
+.umbral { display: flex; flex-direction: column; gap: 7px; }
+.umbral-barra { height: 5px; background: var(--slate-4); border-radius: 3px; overflow: hidden; }
+.umbral-barra i { display: block; height: 100%; background: var(--estado-gracia); }
+
+.seccion-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.seccion-cabecera h3 { margin: 0; }
+
+.vigente { display: flex; align-items: flex-start; gap: 7px; margin: 0 0 9px; color: var(--exito); font-size: 13px; }
+.vigente .icono { color: var(--exito); margin-top: 2px; }
+
+.fila-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.fila-form input[type='email'] { flex: 1; min-width: 180px; }
+.fila-form input[type='text'] { flex: 1; min-width: 150px; }
+
+.simple { margin: 0; padding-left: 18px; font-size: 13px; }
+.simple li { margin-bottom: 4px; }
+
+/* Ficha de datos en dos columnas (dl del expediente) */
+.datos-ficha { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 0; }
+.datos-ficha > div { padding: 9px 0; border-bottom: 1px solid var(--borde-suave); min-width: 0; }
+.datos-ficha > div:nth-child(odd) { padding-right: 14px; }
+.datos-ficha dt {
+  font-size: 11px; color: var(--muy-tenue); text-transform: uppercase;
+  letter-spacing: 0.04em; margin-bottom: 3px;
+}
+.datos-ficha dd { margin: 0; font-size: 13px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
 /* =========================================================================
    Responsive
