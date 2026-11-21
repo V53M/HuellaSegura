@@ -164,6 +164,7 @@ a { color: var(--primario); text-decoration: none; }
 .pagina-cabecera { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
 .pagina-cabecera .sub { color: var(--tenue); margin-top: 4px; }
 .pagina-cabecera .acciones { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.pagina.estrecha { max-width: 620px; }
 
 /* =========================================================================
    Tarjetas y contenedores
@@ -286,6 +287,14 @@ input[type='range'] { width: 100%; height: auto; padding: 0; border: 0; accent-c
 
 .politica summary { cursor: pointer; color: var(--tenue); font-size: 13px; }
 .politica ul { margin: 9px 0 0; }
+.campo small { font-size: 12px; }
+
+/* Campos con unidad a la derecha (parámetros del motor) */
+.con-unidad { display: flex; align-items: center; gap: 6px; }
+.con-unidad input { width: 8.5rem; }
+
+/* Fieldset sin separación superior (formulario de parámetros) */
+fieldset.sin-borde { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
 /* ---------- Buscador de dirección (geocodificación) ---------- */
 .buscador { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; width: 100%; }
