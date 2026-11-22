@@ -18,11 +18,11 @@ import '@radix-ui/colors/red-dark.css';
 import '@radix-ui/colors/plum.css';
 import '@radix-ui/colors/plum-dark.css';
 import './tema.js';
-import App from './App.jsx';
+import Raiz from './Raiz.jsx';
 import './estilos.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <Raiz />
   </StrictMode>,
 );

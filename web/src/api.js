@@ -7,11 +7,25 @@ async function pedir(ruta, opciones = {}) {
     body: opciones.body ? JSON.stringify(opciones.body) : undefined,
   });
   const datos = r.headers.get('content-type')?.includes('json') ? await r.json() : null;
+  // Sesión vencida o revocada: la raíz de la app vuelve a la pantalla de inicio de sesión.
+  if (r.status === 401 && !ruta.startsWith('/auth/')) window.dispatchEvent(new Event('sesion-vencida'));
   if (!r.ok) throw new Error(datos?.error ?? `Error ${r.status}`);
   return datos;
 }
 
 export const api = {
+  iniciarSesion: (correo, contrasena) => pedir('/auth/iniciar', { method: 'POST', body: { correo, contrasena, cliente: 'WEB' } }),
+  salir: () => pedir('/auth/salir', { method: 'POST' }),
+  yo: () => pedir('/auth/yo'),
+  cambiarContrasena: (actual, nueva) => pedir('/auth/contrasena', { method: 'POST', body: { actual, nueva } }),
+  politica: () => pedir('/politica'),
+  consentimiento: (id) => pedir(`/adopciones/${id}/consentimiento`),
+  registrarConsentimiento: (id, evidencia) => pedir(`/adopciones/${id}/consentimiento`, { method: 'POST', body: { evidencia } }),
+  revocarConsentimiento: (id, motivo) => pedir(`/adopciones/${id}/consentimiento`, { method: 'DELETE', body: { motivo } }),
+  crearAcceso: (id, correo, contrasena) => pedir(`/adopciones/${id}/acceso`, { method: 'POST', body: { correo, contrasena } }),
+  usuarios: () => pedir('/usuarios'),
+  crearUsuario: (u) => pedir('/usuarios', { method: 'POST', body: u }),
+  activarUsuario: (id, activo) => pedir(`/usuarios/${id}`, { method: 'PATCH', body: { activo } }),
   seguimiento: () => pedir('/seguimiento'),
   adopcion: (id) => pedir(`/adopciones/${id}`),
   recorrido: (id, horas = 6) => pedir(`/adopciones/${id}/recorrido?horas=${horas}`),

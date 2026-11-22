@@ -1,5 +1,6 @@
 # Entorno local. Puerto 5433 para no chocar con un PostgreSQL instalado en el equipo.
-# Traccar se agrega en una versión posterior; por ahora el simulador envía al endpoint directo de la API.
+# Traccar (§7.1) recibe los collares TK911 y reenvía posiciones y eventos a la API con X-Traccar-Secret.
+# El simulador puede seguir usando /ingesta/osmand sin Traccar.
 services:
   db:
     image: postgis/postgis:16-3.4
@@ -16,5 +17,31 @@ services:
       interval: 3s
       retries: 20
 
+  traccar:
+    image: traccar/traccar:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8082:8082"   # consola web de Traccar
+      - "5055:5055"   # protocolo osmand (simulador / Traccar Client)
+      - "5013:5013"   # protocolo h02  (TKSTAR TK909/TK911 familia *HQ,..#)
+      - "5023:5023"   # protocolo gt06 (muchos clones del TK911; tramas 7878/7979)
+      - "5001:5001"   # protocolo gps103 (otros clones tipo Coban)
+    environment:
+      # Permite sobrescribir claves de traccar.xml con variables de entorno (forward.header, etc.).
+      CONFIG_USE_ENVIRONMENT_VARIABLES: "true"
+      # Secreto que la API exige en X-Traccar-Secret. Debe coincidir con TRACCAR_SECRET de backend/.env.
+      # Definir el valor real en un .env en la raíz del repositorio (no se sube); ver .env.example.
+      FORWARD_HEADER: "X-Traccar-Secret: ${TRACCAR_SECRET:-cambiar-por-un-secreto-largo}"
+      EVENT_FORWARD_HEADER: "X-Traccar-Secret: ${TRACCAR_SECRET:-cambiar-por-un-secreto-largo}"
+    extra_hosts:
+      # La API corre en el host (npm run dev) durante el desarrollo.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./traccar/traccar.xml:/opt/traccar/conf/traccar.xml:ro
+      - datos_traccar:/opt/traccar/data
+
 volumes:
   datos_pg:
+  datos_traccar:

@@ -9,7 +9,7 @@ const CAMPOS = [
   { k: 'error_m_respaldo', etiqueta: 'Error GPS de respaldo (p95)', unidad: 'm', paso: 1, ayuda: 'Se usa cuando el collar no reporta precisión. Valor final: medición en Cali (H3).' },
 ];
 
-export default function Parametros({ onGuardado }) {
+export default function Parametros({ onGuardado, editable }) {
   const [p, setP] = useState(null);
   const [mensaje, setMensaje] = useState(null);
 
@@ -36,7 +36,9 @@ export default function Parametros({ onGuardado }) {
     <div className="pagina estrecha">
       <h2>Parámetros del motor</h2>
       <p className="tenue" style={{ margin: '4px 0 0' }}>{p.fundacion} · Valores de demostración. Los definitivos salen de la medición del error (hito H3) y de la fundación.</p>
+      {!editable && <p className="aviso">Solo un administrador de la fundación puede cambiar estos valores.</p>}
       <form className="formulario" onSubmit={guardar}>
+        <fieldset disabled={!editable} className="sin-borde">
         {CAMPOS.map((c) => (
           <label key={c.k} className="campo">
             <span>{c.etiqueta}</span>
@@ -54,7 +56,8 @@ export default function Parametros({ onGuardado }) {
         <p className="tenue pequeno">
           Regla de bienestar: el collar (≈ 71 g) no puede superar el 2 % del peso, así que solo se asigna a animales de {Number(p.peso_minimo_kg).toFixed(2)} kg o más.
         </p>
-        <button className="boton primario">Guardar</button>
+        </fieldset>
+        {editable && <button className="boton primario">Guardar</button>}
         {mensaje && <p className={mensaje.ok ? 'exito' : 'error'}>{mensaje.texto}</p>}
       </form>
     </div>

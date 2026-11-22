@@ -316,3 +316,19 @@ input[type='checkbox'] { height: 14px; width: 14px; accent-color: var(--primario
 .aviso-flotante .icono { color: var(--red-11); }
 .aviso-flotante.escalada { border-left-color: var(--plum-9); }
 .aviso-flotante.escalada .icono { color: var(--plum-11); }
+
+/* ---------- Sesión y cuentas ---------- */
+.ingreso { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--fondo); }
+.tarjeta-ingreso {
+  width: min(360px, 100%); background: var(--superficie); border: 1px solid var(--borde);
+  border-radius: var(--radio); padding: 24px;
+}
+.tarjeta-ingreso .marca { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; }
+.usuario-actual { font-size: 12px; color: var(--tenue); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+fieldset.sin-borde { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.lista-usuarios { list-style: none; margin: 0 0 16px; padding: 0; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--superficie); }
+.lista-usuarios li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; }
+.lista-usuarios li + li { border-top: 1px solid var(--borde-suave); }
+.lista-usuarios li.inactivo { color: var(--muy-tenue); }
+.politica summary { cursor: pointer; color: var(--tenue); }
+.politica ul { margin-top: 6px; }

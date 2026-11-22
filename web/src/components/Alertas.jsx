@@ -107,11 +107,11 @@ export function AccionesAlerta({ alerta }) {
         <button
           className="boton" disabled={ocupado}
           onClick={() => {
-            const r = window.prompt('Respuesta del adoptante (demo):', 'Está conmigo, salimos a caminar');
+            const r = window.prompt('¿Qué respondió el adoptante por teléfono?', '');
             if (r !== null) hacer(() => api.responderAlerta(alerta.id, r));
           }}
         >
-          Simular respuesta del adoptante
+          Registrar respuesta (llamada)
         </button>
       )}
       <div className="fila-form">

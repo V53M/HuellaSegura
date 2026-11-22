@@ -1,26 +1,7 @@
-import express from 'express';
-import { existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { api } from './api/rutas.js';
-import { ingesta } from './ingesta/ingesta.js';
+import { app } from './app.js';
 import { tick } from './motor/servicio.js';
 import { iniciarNotificaciones } from './notificaciones/notificaciones.js';
-
-const app = express();
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: false }));
-
-app.use('/ingesta', ingesta);
-app.use('/api', api);
-app.get('/salud', (_req, res) => res.json({ ok: true }));
-
-// En producción la API sirve también la web compilada (web/dist).
-const web = join(dirname(fileURLToPath(import.meta.url)), '../../web/dist');
-if (existsSync(web)) {
-  app.use(express.static(web));
-  app.get(/^\/(?!api|ingesta).*/, (_req, res) => res.sendFile(join(web, 'index.html')));
-}
+import { podarSesiones } from './auth/sesiones.js';
 
 iniciarNotificaciones();
 
@@ -41,3 +22,12 @@ setInterval(async () => {
     enCurso = false;
   }
 }, cadaMs);
+
+// La tabla `sesion` no debe crecer sin límite: cada hora se borran las sesiones vencidas hace más de una semana.
+setInterval(async () => {
+  try {
+    await podarSesiones();
+  } catch (err) {
+    console.error('[podar-sesiones]', err);
+  }
+}, 60 * 60_000);

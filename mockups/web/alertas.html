@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HuellaSegura · Bandeja de alertas</title>
+  <link rel="stylesheet" href="../base.css" />
+  <style>
+    .controles-cab { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-left: auto; }
+    .exportes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    /* Resumen de latencia */
+    .latencia-resumen { display: flex; gap: 40px; flex-wrap: wrap; }
+    .latencia-resumen .metrica .v { font-size: 24px; }
+
+    /* Item de alerta */
+    .alerta-item {
+      background: var(--superficie); border: 1px solid var(--borde-suave);
+      border-left: 3px solid var(--estado-alerta); border-radius: var(--radio);
+      box-shadow: var(--sombra-1); overflow: hidden;
+    }
+    .alerta-item.escalada { border-left-color: var(--estado-escalada); }
+    .alerta-item.resuelta { border-left-color: var(--borde); }
+    .alerta-item.resuelta .alerta-item-cab { background: var(--superficie-alt); }
+
+    .alerta-item-cab { display: flex; align-items: flex-start; gap: 14px; padding: 15px 18px; flex-wrap: wrap; }
+    .alerta-item-cab .quien { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .alerta-item-cab .quien .nom { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .alerta-item-cab .quien .nom strong { font-size: 15px; font-weight: 650; }
+    .alerta-item-cab .quien .contacto { font-size: 13px; color: var(--tenue); }
+    .alerta-item-tiempos {
+      margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 3px;
+      font-size: 13px;
+    }
+    .alerta-item-tiempos .grande { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+
+    .alerta-item-cuerpo {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--borde-suave); background: var(--superficie-alt);
+    }
+    .alerta-item-cuerpo > div { padding: 14px 18px; }
+    .alerta-item-cuerpo > div + div { border-left: 1px solid var(--borde-suave); }
+    .alerta-item-cuerpo h3 { margin-bottom: 10px; }
+
+    .datos { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; margin: 0; font-size: 13px; }
+    .datos dt { color: var(--muy-tenue); }
+    .datos dd { margin: 0; }
+
+    .avisos { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: 13px; }
+    .avisos li { display: flex; gap: 8px; align-items: flex-start; }
+    .avisos .dest { min-width: 96px; color: var(--tenue); }
+    .acuse-ok { color: var(--exito); }
+    .acuse-pend { color: var(--muy-tenue); }
+
+    .alerta-item-pie {
+      padding: 13px 18px; border-top: 1px solid var(--borde-suave);
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .alerta-item-pie select { min-width: 250px; }
+
+    @media (max-width: 720px) {
+      .alerta-item-cuerpo { grid-template-columns: 1fr; }
+      .alerta-item-cuerpo > div + div { border-left: 0; border-top: 1px solid var(--borde-suave); }
+      .alerta-item-tiempos { margin-left: 0; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-paw" viewBox="0 0 24 24" fill="currentColor">
+      <ellipse cx="7" cy="9.6" rx="2.1" ry="2.6" /><ellipse cx="11.3" cy="7.3" rx="2.1" ry="2.7" />
+      <ellipse cx="15.9" cy="7.7" rx="2.1" ry="2.7" /><ellipse cx="19.4" cy="11.3" rx="2" ry="2.5" />
+      <path d="M12 12.2c3 0 5.6 2.5 5.6 5.2 0 2-1.7 3.4-3.8 3.4-1 0-1.3-.4-1.8-.4s-.8.4-1.8.4c-2.1 0-3.8-1.4-3.8-3.4 0-2.7 2.6-5.2 5.6-5.2Z" />
+    </symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15" />
+      <path d="M10 8.5 6.5 12l3.5 3.5M6.5 12H16" />
+    </symbol>
+    <symbol id="i-descargar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4v10M8 10.5l4 4 4-4M5 19h14" />
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <header class="barra">
+      <div class="marca">
+        <svg class="icono" width="22" height="22" aria-hidden="true"><use href="#i-paw" /></svg>
+        HuellaSegura
+      </div>
+      <nav class="pestanas">
+        <a href="dashboard.html">Inicio</a>
+        <a href="seguimiento.html">Seguimiento</a>
+        <a class="activa" href="alertas.html">Alertas <span class="insignia">2</span></a>
+        <a href="informes.html">Informes</a>
+        <a href="parametros.html">Parámetros</a>
+        <a href="usuarios.html">Usuarios</a>
+      </nav>
+      <div class="barra-derecha">
+        <span class="fundacion">Fundación de demostración</span>
+        <span class="separador"></span>
+        <span class="conexion ok">En vivo</span>
+        <span class="separador"></span>
+        <span class="usuario-actual"><span class="avatar">AP</span> Ana Pérez</span>
+        <button class="boton fantasma" title="Cerrar sesión">
+          <svg class="icono" width="16" height="16" aria-hidden="true"><use href="#i-salir" /></svg> Salir
+        </button>
+      </div>
+    </header>
+
+    <main class="pagina">
+      <div class="pagina-cabecera">
+        <div>
+          <h1>Bandeja de alertas</h1>
+          <p class="sub">Avisos NUEVA y ESCALADA, entrega y cierre de casos · <span class="etiqueta-borrador" style="margin-left:4px">Borrador · datos de ejemplo</span></p>
+        </div>
+        <div class="controles-cab">
+          <label class="interruptor">
+            <input type="checkbox" checked /> Solo abiertas
+          </label>
+          <div class="exportes">
+            <span class="minus tenue">Exportar (OE5)</span>
+            <a class="boton sm" href="#"><svg class="icono" width="15" height="15" aria-hidden="true"><use href="#i-descargar" /></svg> <span class="mono">alertas.csv</span></a>
+            <a class="boton sm" href="#"><svg class="icono" width="15" height="15" aria-hidden="true"><use href="#i-descargar" /></svg> <span class="mono">notificaciones.csv</span></a>
+            <a class="boton sm" href="#"><svg class="icono" width="15" height="15" aria-hidden="true"><use href="#i-descargar" /></svg> <span class="mono">transiciones.csv</span></a>
+            <a class="boton sm" href="#"><svg class="icono" width="15" height="15" aria-hidden="true"><use href="#i-descargar" /></svg> <span class="mono">posiciones.csv</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen de latencia OE5 -->
+      <section class="tarjeta" style="margin-bottom:16px">
+        <div class="tarjeta-cabecera">
+          <h2>Latencia de alerta (OE5)</h2>
+          <span class="tenue minus">Umbral cumplido &rarr; aviso recibido</span>
+        </div>
+        <div class="tarjeta-cuerpo">
+          <div class="latencia-resumen">
+            <div class="metrica">
+              <span class="l">Fundación · web</span>
+              <span class="v mono">4,2 s</span>
+              <span class="l">mediana · p95 <span class="mono">8,1 s</span></span>
+              <span class="l">6 de 6 recibidas</span>
+            </div>
+            <div class="metrica">
+              <span class="l">Adoptante · push</span>
+              <span class="v mono">6,1 s</span>
+              <span class="l">mediana · p95 <span class="mono">11,4 s</span></span>
+              <span class="l">4 de 6 recibidas</span>
+            </div>
+            <div class="metrica">
+              <span class="l">Sin enviar</span>
+              <span class="v mono">2</span>
+              <span class="l">push sin configurar / app no instalada</span>
+              <span class="l">cuenta como no entregado</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="pila">
+        <!-- ===== Alerta escalada (abierta) ===== -->
+        <article class="alerta-item escalada">
+          <div class="alerta-item-cab">
+            <span class="pastilla escalada"><span class="estado-punto"></span>Escalada</span>
+            <span class="quien">
+              <span class="nom">
+                <strong>Luna</strong>
+                <span class="pastilla sinsenal" style="font-weight:500">collar <span class="mono" style="font-size:12px">sim-001</span></span>
+              </span>
+              <span class="contacto">Adoptante de prueba 1 · <span class="mono">300 000 0000</span> · San Antonio</span>
+            </span>
+            <span class="alerta-item-tiempos">
+              <span class="grande">hace 12 min</span>
+              <span class="tenue">creada 10:42:15 · fuera desde 10:39:02</span>
+            </span>
+          </div>
+          <div class="alerta-item-cuerpo">
+            <div>
+              <h3>Cronología</h3>
+              <dl class="datos">
+                <dt>Creada</dt><dd><span class="mono">20/11/2026 10:42:15</span> <span class="tenue">(hace 12 min)</span></dd>
+                <dt>Fuera desde</dt><dd class="mono">20/11/2026 10:39:02</dd>
+                <dt>Escalada</dt><dd class="mono">20/11/2026 10:45:15</dd>
+                <dt>Causa</dt><dd>Superó el umbral de permanencia</dd>
+              </dl>
+            </div>
+            <div>
+              <h3>Avisos</h3>
+              <ul class="avisos">
+                <li><span class="dest">Fundación:</span> <span>recibida en <span class="mono">4,2 s</span> · <span class="acuse-ok">leída</span></span></li>
+                <li><span class="dest">Adoptante:</span> <span>recibida en <span class="mono">6,1 s</span> · <span class="acuse-ok">leída</span></span></li>
+                <li><span class="dest">Escalada:</span> <span>fundación, <span class="mono">4,4 s</span></span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="alerta-item-pie">
+            <button class="boton">Registrar respuesta (llamada)</button>
+            <div class="medir-fila" style="gap:8px">
+              <select>
+                <option>Verificación telefónica…</option>
+                <option>Verdadera (el animal estaba en riesgo)</option>
+                <option>Falso positivo: salida legítima</option>
+                <option>Falso positivo: error de posición</option>
+              </select>
+              <button class="boton primario">Cerrar caso</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ===== Alerta nueva (abierta) ===== -->
+        <article class="alerta-item">
+          <div class="alerta-item-cab">
+            <span class="pastilla alerta"><span class="estado-punto"></span>Alerta</span>
+            <span class="quien">
+              <span class="nom">
+                <strong>Rocco</strong>
+                <span class="pastilla sinsenal" style="font-weight:500">collar <span class="mono" style="font-size:12px">sim-014</span></span>
+              </span>
+              <span class="contacto">Marcela Ruiz · <span class="mono">315 000 0001</span> · El Poblado</span>
+            </span>
+            <span class="alerta-item-tiempos">
+              <span class="grande">hace 4 min</span>
+              <span class="tenue">creada 10:55:41 · fuera desde 10:55:38</span>
+            </span>
+          </div>
+          <div class="alerta-item-cuerpo">
+            <div>
+              <h3>Cronología</h3>
+              <dl class="datos">
+                <dt>Creada</dt><dd><span class="mono">20/11/2026 10:55:41</span> <span class="tenue">(hace 4 min)</span></dd>
+                <dt>Fuera desde</dt><dd class="mono">20/11/2026 10:55:38</dd>
+                <dt>Escalada</dt><dd class="tenue">— aún no</dd>
+                <dt>Causa</dt><dd>Superó el umbral de permanencia</dd>
+              </dl>
+            </div>
+            <div>
+              <h3>Avisos</h3>
+              <ul class="avisos">
+                <li><span class="dest">Fundación:</span> <span>recibida en <span class="mono">3,9 s</span> · <span class="acuse-ok">leída</span></span></li>
+                <li><span class="dest">Adoptante:</span> <span class="acuse-pend">enviada, sin acuse de recibo</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="alerta-item-pie">
+            <button class="boton">Registrar respuesta (llamada)</button>
+            <div class="medir-fila" style="gap:8px">
+              <select>
+                <option>Verificación telefónica…</option>
+                <option>Verdadera (el animal estaba en riesgo)</option>
+                <option>Falso positivo: salida legítima</option>
+                <option>Falso positivo: error de posición</option>
+              </select>
+              <button class="boton primario">Cerrar caso</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ===== Alerta resuelta ===== -->
+        <article class="alerta-item resuelta">
+          <div class="alerta-item-cab">
+            <span class="pastilla sinsenal"><span class="estado-punto"></span>Resuelta</span>
+            <span class="quien">
+              <span class="nom">
+                <strong>Tomás</strong>
+                <span class="pastilla sinsenal" style="font-weight:500">collar <span class="mono" style="font-size:12px">sim-002</span></span>
+              </span>
+              <span class="contacto">Adoptante de prueba 2 · <span class="mono">320 000 0002</span> · Granada</span>
+            </span>
+            <span class="alerta-item-tiempos">
+              <span class="grande tenue">hace 1 h 42 min</span>
+              <span class="tenue">creada 09:12:07 · resuelta 09:20:44</span>
+            </span>
+          </div>
+          <div class="alerta-item-cuerpo">
+            <div>
+              <h3>Cronología</h3>
+              <dl class="datos">
+                <dt>Creada</dt><dd class="mono">20/11/2026 09:12:07</dd>
+                <dt>Fuera desde</dt><dd class="mono">20/11/2026 09:10:15</dd>
+                <dt>Respuesta</dt><dd>«Fue a la veterinaria» <span class="mono tenue">09:18:30</span></dd>
+                <dt>Resuelta</dt><dd>El animal volvió · <span class="mono">8 min 37 s</span></dd>
+              </dl>
+            </div>
+            <div>
+              <h3>Avisos y verificación</h3>
+              <ul class="avisos">
+                <li><span class="dest">Fundación:</span> <span>recibida en <span class="mono">5,0 s</span> · <span class="acuse-ok">leída</span></span></li>
+                <li><span class="dest">Adoptante:</span> <span>recibida en <span class="mono">7,2 s</span> · <span class="acuse-ok">leída</span></span></li>
+                <li><span class="dest">Verificación:</span> <span>Falso positivo: salida legítima</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="alerta-item-pie">
+            <div class="medir-fila" style="gap:8px">
+              <select>
+                <option>Falso positivo: salida legítima</option>
+                <option>Verdadera (el animal estaba en riesgo)</option>
+                <option>Falso positivo: error de posición</option>
+              </select>
+              <button class="boton">Guardar verificación</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p class="tenue minus" style="margin-top:16px">
+        «Solo abiertas» oculta los casos resueltos. Las alertas escaladas solo las cierra la fundación,
+        aunque el animal haya vuelto a la zona.
+      </p>
+    </main>
+  </div>
+
+  <script src="../tema.js"></script>
+</body>
+</html>

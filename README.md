@@ -15,7 +15,7 @@ cd backend
 cp .env.example .env
 npm install
 npm run migrar
-npm run semilla                      # fundación de demostración + 3 collares simulados
+npm run semilla                      # fundación de demostración, 3 collares simulados y cuentas de prueba
 npm run dev                          # API en http://localhost:3000
 ```
 
@@ -36,6 +36,17 @@ node simulador/simular.js --demo
 La demo mueve tres collares a la vez: `sim-001` sale y no vuelve a tiempo (alerta y escalada), `sim-002` sale con
 una excepción de paseo (no alerta) y `sim-003` tiene saltos de posición por error del GPS (no alerta).
 
+La semilla crea estas cuentas, todas con la contraseña `huella-demo-2027`:
+
+| Cuenta | Rol | Dónde ingresa |
+|---|---|---|
+| `admin@demo.huellasegura.co` | Administrador de la fundación | Web |
+| `personal@demo.huellasegura.co` | Personal de la fundación | Web (y el simulador) |
+| `adoptante1@` … `adoptante3@demo.huellasegura.co` | Adoptante | App móvil (`/api/movil`) |
+
+Para el piloto, cree el primer administrador real con
+`npm run crear-usuario -- --correo ana@fundacion.org --nombre "Ana Pérez" --fundacion 1` (pide la contraseña).
+
 ### Otros escenarios
 
 ```bash
@@ -54,20 +65,22 @@ completo en minutos. Se cambian en la pestaña **Parámetros**.
 
 ```bash
 cd backend
-npm test        # escenarios del motor sobre trazas sintéticas, con cobertura
+npm test                  # motor, notificaciones y autenticación, con cobertura (sin base de datos)
+npm run test:integracion  # permisos y consentimiento contra la base de docker compose
 ```
 
 ## Qué hay en esta versión
 
 | Parte | Archivo | Estado |
 |---|---|---|
-| Modelo de datos (PostGIS) | `backend/src/db/migraciones/001_modelo.sql` | Entidades de §6.1 y §6.2 salvo `usuario` y `consentimiento` |
+| Modelo de datos (PostGIS) | `backend/src/db/migraciones/001_modelo.sql` | Todas las entidades de §6.1 y §6.2 |
 | Motor de estados (función pura) | `backend/src/motor/motor.js` | Los 6 estados, histéresis, umbral, excepciones, escalada, sin señal |
 | Motor ↔ BD + reloj | `backend/src/motor/servicio.js`, `server.js` | Tick cada `TICK_SEGUNDOS` para lo que depende del tiempo |
 | Ingesta | `backend/src/ingesta/ingesta.js` | Traccar (`/ingesta/posiciones`, `/ingesta/eventos`) y OsmAnd directo (`/ingesta/osmand`) |
 | API REST | `backend/src/api/rutas.js` | Seguimiento, expediente, zonas, excepciones, alertas, parámetros, exportes CSV, SSE |
 | Web de la fundación | `web/` | Mapa en vivo, alta de adopciones, editor de zona, expediente, bandeja de alertas, parámetros |
 | Notificaciones y latencia | `backend/src/notificaciones/` | Push FCM al adoptante, aviso web a la fundación, acuses y métricas (OE5) |
+| Autenticación y consentimiento | `backend/src/auth/`, `api/auth.js`, `api/movil.js` | Roles, sesiones revocables, límite de intentos, Ley 1581 |
 | Simulador | `simulador/simular.js` | 7 escenarios |
 
 ### Ubicar la zona segura por dirección
@@ -98,7 +111,7 @@ así que es una cota superior honesta.
 - **NUEVA** va a la fundación de origen (web, por SSE) y al adoptante (push FCM a cada teléfono registrado).
 - **ESCALADA** va solo a la fundación.
 - La web acusa cada aviso al recibirlo y lo marca leído al hacer clic. La app móvil debe hacer lo mismo con
-  `POST /api/notificaciones/:id/entregada` y `/leida`, usando el `notificacion_id` que llega en los datos de la push.
+  `POST /api/movil/notificaciones/:id/entregada` y `/leida`, usando el `notificacion_id` que llega en los datos de la push.
 - Un aviso que no se pudo enviar también queda registrado (`SIN_TOKEN`, `FCM_NO_CONFIGURADO`, `UNREGISTERED`),
   porque cuenta como no entregado en las métricas. Un token que FCM reporta como inválido se da de baja.
 - La bandeja de alertas muestra la mediana y el p95 por destinatario (`GET /api/metricas/latencia`), y
@@ -106,7 +119,36 @@ así que es una cota superior honesta.
 
 **Activar FCM:** en la consola de Firebase, *Configuración del proyecto → Cuentas de servicio → Generar nueva clave
 privada*, y poner la ruta del JSON en `FCM_CREDENCIALES` del `.env`. No se sube al repositorio. La app registra su
-token con `POST /api/adoptantes/:id/tokens` (`{ "token": "...", "plataforma": "ANDROID" }`).
+token con `POST /api/movil/tokens` (`{ "token": "...", "plataforma": "ANDROID" }`).
+
+### Usuarios, roles y consentimiento (Ley 1581)
+- **Roles.** *Administrador* y *personal* de la fundación usan la web; el administrador además cambia los
+  parámetros y crea cuentas (pestaña **Usuarios**). El *adoptante* usa la app móvil (`/api/movil/...`) y solo ve
+  sus propias adopciones. Cada consulta de la web se limita a la fundación del usuario.
+- **Sesiones.** Token aleatorio de 256 bits; en la base solo se guarda su SHA-256, así que se puede revocar y una
+  copia de la base no sirve para suplantar a nadie. La web lo lleva en una cookie `HttpOnly; SameSite=Strict`
+  (12 h); la app lo envía como `Authorization: Bearer` (30 días). Cinco intentos fallidos bloquean ese correo
+  desde esa IP durante 15 min. Las contraseñas se guardan con scrypt.
+- **Consentimiento.** No se registra una adopción sin la autorización firmada (con la referencia del formato).
+  El adoptante también puede aceptarla o revocarla desde la app. **Sin autorización vigente no se guardan las
+  posiciones de su collar ni corre el motor**; la fundación sí puede cerrar los casos que hubieran quedado abiertos.
+  Un collar sin asignar (medición del error) se sigue registrando, porque no hay datos de ninguna persona.
+- **Política.** El texto está en `backend/src/auth/politica.js` y es un **borrador**: lo deben revisar la fundación
+  y el director. Al cambiarlo hay que subir `POLITICA_VERSION`; cada consentimiento guarda la versión aceptada.
+- **Producción.** Con HTTPS, poner `COOKIE_SEGURA=1`, y `DETRAS_DE_PROXY=1` si va detrás de Nginx.
+
+**API de la app móvil** (todas con `Authorization: Bearer <token>`):
+
+| Método y ruta | Para qué |
+|---|---|
+| `POST /api/auth/iniciar` `{correo, contrasena, cliente: "MOVIL"}` | Devuelve el token |
+| `GET /api/movil/adopciones` | Sus animales: estado, zona, última posición, excepción y alerta abierta |
+| `POST /api/movil/adopciones/:id/excepciones` `{motivo, duracion_min}` | Declarar paseo, veterinaria o viaje |
+| `POST /api/movil/alertas/:id/responder` `{respuesta}` | Responder una alerta |
+| `GET` · `POST` · `DELETE /api/movil/consentimiento` | Ver la política, aceptarla (`{version}`) o revocarla |
+| `POST /api/movil/tokens` `{token, plataforma}` | Registrar el token de FCM |
+| `POST /api/movil/notificaciones/:id/entregada` · `/leida` | Acuses para medir la latencia |
+| `POST /api/auth/contrasena` `{actual, nueva}` · `POST /api/auth/salir` | Cambiar la contraseña temporal · cerrar sesión |
 
 ### Decisiones del motor que conviene validar con el director
 - **El umbral sigue contando sin señal.** Si el animal salió y el collar se apagó, la alerta igual se genera (queda
@@ -117,9 +159,7 @@ token con `POST /api/adoptantes/:id/tokens` (`{ "token": "...", "plataforma": "A
 - **Una alerta escalada solo la cierra la fundación,** aunque el animal haya vuelto.
 
 ## Pendiente para las siguientes versiones
-- Autenticación y roles (`usuario`), y consentimiento (Ley 1581). Hoy la API actúa como una única fundación, y
-  los endpoints de tokens y acuses no verifican todavía que quien llama sea el adoptante.
 - Traccar en `docker-compose` con el `traccar.xml` de §7.1.
 - `openapi.yaml`.
 - Supresión auditada de datos.
-- App móvil del adoptante (hoy la web simula sus acciones: declarar excepción y responder alerta).
+- App móvil del adoptante (la API ya está lista en `/api/movil`; hoy la fundación registra por la web lo que el adoptante le comunica por teléfono).

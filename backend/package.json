@@ -8,7 +8,9 @@
     "start": "node --env-file-if-exists=.env src/server.js",
     "migrar": "node --env-file-if-exists=.env src/db/migrar.js",
     "semilla": "node --env-file-if-exists=.env src/db/semilla.js",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=src/motor/** --test-coverage-include=src/geocodificacion/direccion.js --test-coverage-include=src/notificaciones/metricas.js --test-coverage-include=src/notificaciones/fcm.js"
+    "test": "node --test test/*.test.js --experimental-test-coverage --test-coverage-include=src/motor/** --test-coverage-include=src/geocodificacion/direccion.js --test-coverage-include=src/notificaciones/metricas.js --test-coverage-include=src/notificaciones/fcm.js --test-coverage-include=src/auth/contrasenas.js --test-coverage-include=src/auth/limite.js --test-coverage-include=src/auth/middleware.js",
+    "crear-usuario": "node --env-file-if-exists=.env src/db/crear-usuario.js",
+    "test:integracion": "node --env-file-if-exists=.env --test test/integracion/*.test.js"
   },
   "dependencies": {
     "express": "^4.21.2",

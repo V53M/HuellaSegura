@@ -2,7 +2,12 @@
 // Cada adopción se procesa en serie para que dos posiciones simultáneas no pisen el estado.
 import { consulta, enTransaccion } from '../db/db.js';
 import { bus } from '../eventos.js';
-import { estadoInicial, evaluar } from './motor.js';
+import { estadoInicial, evaluar, clasificarLado } from './motor.js';
+import { SQL_CONSENTIDO } from '../auth/consentimiento.js';
+
+// Sin consentimiento vigente (Ley 1581) el motor no evalúa posiciones, conexiones ni el paso del tiempo.
+// Las acciones de personas (cierre de la fundación, respuesta, excepción) sí se aplican, para poder cerrar casos abiertos.
+const AUTOMATICOS = new Set(['POSICION', 'CONEXION', 'TICK']);
 
 const colas = new Map();
 function enCola(adopcionId, fn) {
@@ -19,7 +24,8 @@ async function cargarContexto(cliente, adopcionId, t) {
   const { rows } = await cliente.query(
     `SELECT a.fundacion_id, e.estado, e.desde, e.fuera_desde, e.estado_previo, e.ultimo_reporte, e.alerta_id,
             al.creada_en AS alerta_desde,
-            pf.umbral_permanencia_min, pf.horas_para_escalar, pf.min_sin_senal, pf.usar_histeresis, pf.error_m_respaldo
+            pf.umbral_permanencia_min, pf.horas_para_escalar, pf.min_sin_senal, pf.usar_histeresis, pf.error_m_respaldo,
+            ${SQL_CONSENTIDO} AS consentido
        FROM adopcion a
        JOIN parametros_fundacion pf ON pf.fundacion_id = a.fundacion_id
        LEFT JOIN estado_seguimiento e ON e.adopcion_id = a.id
@@ -46,6 +52,7 @@ async function cargarContexto(cliente, adopcionId, t) {
     : estadoInicial(t);
   return {
     fundacionId: r.fundacion_id,
+    consentido: r.consentido,
     alertaId: r.alerta_id,
     errorRespaldo: r.error_m_respaldo,
     ctx: {
@@ -113,14 +120,31 @@ function aplicar(adopcionId, t, armarEvento, posicionId) {
     const cambio = await enTransaccion(async (cliente) => {
       const cargado = await cargarContexto(cliente, adopcionId, t);
       if (!cargado) return null;
-      const resultado = evaluar(cargado.ctx, armarEvento(cargado));
+      const evento = armarEvento(cargado);
+      if (!cargado.consentido && AUTOMATICOS.has(evento.tipo)) return null;
+      const resultado = evaluar(cargado.ctx, evento);
       const huboCambio = await guardar(cliente, adopcionId, cargado, resultado, posicionId, avisos);
-      return { huboCambio, estado: resultado.estado.estado };
+      return { huboCambio, estado: resultado.estado.estado, fundacionId: cargado.fundacionId };
     });
     for (const aviso of avisos) bus.emit('alerta', aviso);
     if (cambio && (cambio.huboCambio || posicionId)) bus.emit('seguimiento', { adopcionId, ...cambio, posicionId: posicionId ?? null });
     return cambio;
   });
+}
+
+/**
+ * Adopción a la que estaba asignado el collar en el instante t, y si su adoptante tiene consentimiento vigente.
+ * { adopcionId: null } cuando el collar no está asignado (p. ej. durante la medición del error del GPS).
+ */
+export async function asignacionDe(uid, t) {
+  const { rows } = await consulta(
+    `SELECT ad.adopcion_id, ${SQL_CONSENTIDO} AS consentido
+       FROM asignacion_dispositivo ad JOIN adopcion a ON a.id = ad.adopcion_id
+      WHERE ad.dispositivo_uid = $1 AND ad.desde <= $2 AND (ad.hasta IS NULL OR ad.hasta > $2) AND a.activa
+      ORDER BY ad.desde DESC LIMIT 1`,
+    [uid, fecha(t)],
+  );
+  return { adopcionId: rows[0]?.adopcion_id ?? null, consentido: rows[0]?.consentido ?? false };
 }
 
 /** Adopción a la que estaba asignado el collar en el instante t. */
@@ -143,12 +167,23 @@ export async function procesarPosicion(uid, posicionId) {
   const t = ms(rows[0].fix_time);
   const adopcionId = await adopcionDeDispositivo(uid, t);
   if (!adopcionId) return null;
+  // Evaluación espacial en el servidor (§6): ST_DWithin con los dos márgenes del error GPS da el lado
+  // (DENTRO / FUERA / INCIERTO) sin calcular la distancia a mano; ST_DDistance queda solo como evidencia
+  // para la UI y el umbral de histéresis.
   const { rows: zona } = await consulta(
-    `SELECT z.radio_m, ST_Distance(p.geom, z.centro) AS distancia_m
-       FROM posicion p, zona_segura z WHERE p.id = $1 AND z.adopcion_id = $2`,
+    `SELECT z.radio_m, pf.usar_histeresis, COALESCE(p.precision_m, pf.error_m_respaldo) AS error_m,
+            ST_Distance(p.geom, z.centro) AS distancia_m,
+            ST_DWithin(p.geom, z.centro, GREATEST(z.radio_m - COALESCE(p.precision_m, pf.error_m_respaldo), 0)) AS dentro_con_margen,
+            ST_DWithin(p.geom, z.centro, z.radio_m + COALESCE(p.precision_m, pf.error_m_respaldo)) AS puede_estar_dentro
+       FROM posicion p
+       JOIN zona_segura z ON z.adopcion_id = $2
+       JOIN adopcion a ON a.id = z.adopcion_id
+       JOIN parametros_fundacion pf ON pf.fundacion_id = a.fundacion_id
+      WHERE p.id = $1`,
     [posicionId, adopcionId],
   );
   if (!zona[0]) return null; // sin zona definida no hay nada que evaluar
+  const lado = clasificarLado(zona[0]);
   return aplicar(
     adopcionId,
     t,
@@ -158,6 +193,7 @@ export async function procesarPosicion(uid, posicionId) {
       distancia_m: zona[0].distancia_m,
       error_m: rows[0].precision_m ?? cargado.errorRespaldo,
       radio_m: zona[0].radio_m,
+      lado,
       valida: rows[0].valida,
     }),
     posicionId,
@@ -178,7 +214,7 @@ export function eventoManual(adopcionId, tipo, t = Date.now()) {
 /** Revisa todo lo que depende del tiempo: umbrales, excepciones vencidas, escaladas y pérdida de señal. */
 export async function tick(t = Date.now()) {
   const { rows } = await consulta(
-    `SELECT e.adopcion_id FROM estado_seguimiento e JOIN adopcion a ON a.id = e.adopcion_id WHERE a.activa`,
+    `SELECT e.adopcion_id FROM estado_seguimiento e JOIN adopcion a ON a.id = e.adopcion_id WHERE a.activa AND ${SQL_CONSENTIDO}`,
   );
   for (const { adopcion_id } of rows) {
     await aplicar(adopcion_id, t, () => ({ tipo: 'TICK', t }));

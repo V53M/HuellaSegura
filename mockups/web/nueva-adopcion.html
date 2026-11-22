@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HuellaSegura · Nueva adopción</title>
+  <link rel="stylesheet" href="../base.css" />
+  <style>
+    .lateral-form { padding: 0 16px 16px; }
+    .lateral-form .formulario { padding-top: 4px; }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-paw" viewBox="0 0 24 24" fill="currentColor">
+      <ellipse cx="7" cy="9.6" rx="2.1" ry="2.6" /><ellipse cx="11.3" cy="7.3" rx="2.1" ry="2.7" />
+      <ellipse cx="15.9" cy="7.7" rx="2.1" ry="2.7" /><ellipse cx="19.4" cy="11.3" rx="2" ry="2.5" />
+      <path d="M12 12.2c3 0 5.6 2.5 5.6 5.2 0 2-1.7 3.4-3.8 3.4-1 0-1.3-.4-1.8-.4s-.8.4-1.8.4c-2.1 0-3.8-1.4-3.8-3.4 0-2.7 2.6-5.2 5.6-5.2Z" />
+    </symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15" />
+      <path d="M10 8.5 6.5 12l3.5 3.5M6.5 12H16" />
+    </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12Z" />
+      <circle cx="12" cy="9" r="2.4" />
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <header class="barra">
+      <div class="marca">
+        <svg class="icono" width="22" height="22" aria-hidden="true"><use href="#i-paw" /></svg>
+        HuellaSegura
+      </div>
+      <nav class="pestanas">
+        <a href="dashboard.html">Inicio</a>
+        <a class="activa" href="seguimiento.html">Seguimiento</a>
+        <a href="alertas.html">Alertas <span class="insignia">2</span></a>
+        <a href="informes.html">Informes</a>
+        <a href="parametros.html">Parámetros</a>
+        <a href="usuarios.html">Usuarios</a>
+      </nav>
+      <div class="barra-derecha">
+        <span class="fundacion">Fundación de demostración</span>
+        <span class="separador"></span>
+        <span class="conexion ok">En vivo</span>
+        <span class="separador"></span>
+        <span class="usuario-actual"><span class="avatar">AP</span> Ana Pérez</span>
+        <button class="boton fantasma" title="Cerrar sesión">
+          <svg class="icono" width="16" height="16" aria-hidden="true"><use href="#i-salir" /></svg> Salir
+        </button>
+      </div>
+    </header>
+
+    <div class="vista">
+      <!-- ===================== Formulario ===================== -->
+      <aside class="lateral">
+        <div class="lateral-cabecera">
+          <h2>Nueva adopción</h2>
+          <a class="boton fantasma" href="seguimiento.html">Cancelar</a>
+        </div>
+
+        <div class="lateral-form">
+          <form class="formulario">
+            <fieldset>
+              <legend>Animal</legend>
+              <label class="campo">
+                <span>Nombre</span>
+                <input type="text" value="Mishi" />
+              </label>
+              <div class="fila-form">
+                <label class="campo">
+                  <span>Especie</span>
+                  <select>
+                    <option>Perro</option>
+                    <option selected>Gato</option>
+                    <option>Otro</option>
+                  </select>
+                </label>
+                <label class="campo">
+                  <span>Peso (kg)</span>
+                  <input type="number" step="0.1" min="0.1" value="1.80" />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Adoptante</legend>
+              <label class="campo"><span>Nombre</span><input type="text" value="Laura Gómez" /></label>
+              <label class="campo"><span>Teléfono</span><input type="text" value="320 000 0010" /></label>
+              <label class="campo"><span>Dirección</span><input type="text" value="Cra 32A # 12-34" /></label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Collar</legend>
+              <label class="campo">
+                <span>Identificador (ID impreso en el equipo o IMEI)</span>
+                <input class="mono" type="text" value="sim-042" />
+              </label>
+              <p class="aviso">
+                Peso por debajo de 2.00 kg: el collar superaría el 2 % del peso corporal.
+              </p>
+            </fieldset>
+
+            <fieldset>
+              <legend>Autorización de datos (Ley 1581)</legend>
+              <details class="politica">
+                <summary>Qué autoriza el adoptante (versión <span class="mono">1.2</span>)</summary>
+                <ul class="simple pequeno">
+                  <li>Ubicación continua del animal mientras el collar esté asignado.</li>
+                  <li>Historial de posiciones para el seguimiento y las alertas.</li>
+                  <li>Contacto al adoptante ante una alerta de salida de la zona.</li>
+                  <li>Conservación de los datos mientras la adopción esté vigente.</li>
+                </ul>
+              </details>
+              <label class="interruptor">
+                <input type="checkbox" checked />
+                El adoptante firmó la autorización de tratamiento de datos
+              </label>
+              <label class="campo">
+                <span>Referencia del formato firmado</span>
+                <input type="text" value="FA-2027-014, archivado en la carpeta de la adopción" />
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Zona segura</legend>
+              <div class="buscador">
+                <div class="buscador-fila">
+                  <input type="text" value="Cra 32A # 12-34" aria-label="Dirección o coordenadas" />
+                  <button class="boton" type="button">Buscar</button>
+                </div>
+                <p class="tenue pequeno">Interpretación: cruce de la Cra 32A con la Calle 12</p>
+                <ul class="candidatos">
+                  <li>
+                    <button class="candidato elegido" type="button">
+                      <span class="candidato-titulo">San Antonio, Cali</span>
+                      <span class="candidato-detalle">
+                        <span>Cruce de la vía</span>
+                        <span class="mono">3.44970, -76.53930</span>
+                      </span>
+                    </button>
+                  </li>
+                  <li>
+                    <button class="candidato" type="button">
+                      <span class="candidato-titulo">Yumbo, Valle del Cauca</span>
+                      <span class="candidato-detalle">
+                        <span>Cruce de la vía</span>
+                        <span class="mono">3.41930, -76.52360</span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <p class="ayuda">
+                <svg class="icono" width="15" height="15" aria-hidden="true"><use href="#i-pin" /></svg>
+                Ajuste el centro con un clic en el mapa.
+              </p>
+              <label class="campo">
+                <span>Radio: <strong class="mono">120 m</strong></span>
+                <input type="range" min="30" max="1000" step="10" value="120" />
+              </label>
+              <p class="tenue pequeno">
+                Centro: <span class="mono">3.44970, -76.53930</span>
+              </p>
+            </fieldset>
+
+            <button class="boton primario" type="button">Registrar adopción</button>
+          </form>
+        </div>
+      </aside>
+
+      <!-- ===================== Mapa ===================== -->
+      <div class="mapa" role="img" aria-label="Mapa para situar el centro de la zona segura">
+        <div class="mapa-parque" style="left:7%; top:14%; width:21%; height:25%"></div>
+        <div class="mapa-parque" style="left:69%; top:64%; width:19%; height:23%"></div>
+        <div class="mapa-agua" style="left:-5%; top:76%; width:27%; height:32%"></div>
+
+        <!-- Zona propuesta -->
+        <div class="zona-circulo" style="left:46%; top:44%"></div>
+        <button class="marcador" style="left:46%; top:44%; --c: var(--primario)">
+          <span class="punto"><svg width="15" height="15" aria-hidden="true"><use href="#i-pin" /></svg></span>
+          <span class="nombre">Centro de la zona</span>
+        </button>
+
+        <div class="mapa-leyenda">
+          <span class="l"><span class="pt" style="--c:var(--primario)"></span>Centro propuesto</span>
+          <span class="l"><span class="pt" style="--c:rgb(99 102 241 / .35)"></span>Zona de 120 m</span>
+        </div>
+
+        <div class="mapa-ctrl">
+          <button type="button" aria-label="Acercar">+</button>
+          <button type="button" aria-label="Alejar">&minus;</button>
+        </div>
+
+        <div class="mapa-inferior">
+          <div class="mapa-escala">200 m</div>
+          <div class="mapa-creditos">&copy; OpenStreetMap &middot; &copy; CARTO</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../tema.js"></script>
+</body>
+</html>

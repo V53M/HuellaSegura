@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HuellaSegura · Parámetros del motor</title>
+  <link rel="stylesheet" href="../base.css" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-paw" viewBox="0 0 24 24" fill="currentColor">
+      <ellipse cx="7" cy="9.6" rx="2.1" ry="2.6" /><ellipse cx="11.3" cy="7.3" rx="2.1" ry="2.7" />
+      <ellipse cx="15.9" cy="7.7" rx="2.1" ry="2.7" /><ellipse cx="19.4" cy="11.3" rx="2" ry="2.5" />
+      <path d="M12 12.2c3 0 5.6 2.5 5.6 5.2 0 2-1.7 3.4-3.8 3.4-1 0-1.3-.4-1.8-.4s-.8.4-1.8.4c-2.1 0-3.8-1.4-3.8-3.4 0-2.7 2.6-5.2 5.6-5.2Z" />
+    </symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15" />
+      <path d="M10 8.5 6.5 12l3.5 3.5M6.5 12H16" />
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <header class="barra">
+      <div class="marca">
+        <svg class="icono" width="22" height="22" aria-hidden="true"><use href="#i-paw" /></svg>
+        HuellaSegura
+      </div>
+      <nav class="pestanas">
+        <a href="dashboard.html">Inicio</a>
+        <a href="seguimiento.html">Seguimiento</a>
+        <a href="alertas.html">Alertas <span class="insignia">2</span></a>
+        <a href="informes.html">Informes</a>
+        <a class="activa" href="parametros.html">Parámetros</a>
+        <a href="usuarios.html">Usuarios</a>
+      </nav>
+      <div class="barra-derecha">
+        <span class="fundacion">Fundación de demostración</span>
+        <span class="separador"></span>
+        <span class="conexion ok">En vivo</span>
+        <span class="separador"></span>
+        <span class="usuario-actual"><span class="avatar">AP</span> Ana Pérez</span>
+        <button class="boton fantasma" title="Cerrar sesión">
+          <svg class="icono" width="16" height="16" aria-hidden="true"><use href="#i-salir" /></svg> Salir
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== Contenido ===================== -->
+    <main class="pagina estrecha">
+      <h2>Parámetros del motor</h2>
+      <p class="tenue" style="margin: 4px 0 0">
+        Fundación de demostración · Valores de demostración. Los definitivos salen de la medición del error
+        (hito H3) y de la fundación.
+      </p>
+
+      <form class="formulario">
+        <fieldset class="sin-borde">
+          <label class="campo">
+            <span>Radio por defecto de la zona segura</span>
+            <span class="con-unidad">
+              <input type="number" step="10" value="120" />
+              <span class="tenue">m</span>
+            </span>
+            <small class="tenue">No puede ser menor que el error esperado del GPS.</small>
+          </label>
+
+          <label class="campo">
+            <span>Umbral de permanencia</span>
+            <span class="con-unidad">
+              <input type="number" step="0.5" value="2" />
+              <span class="tenue">min</span>
+            </span>
+            <small class="tenue">Tiempo continuo fuera de la zona antes de alertar.</small>
+          </label>
+
+          <label class="campo">
+            <span>Horas para escalar</span>
+            <span class="con-unidad">
+              <input type="number" step="0.05" value="0.05" />
+              <span class="tenue">h</span>
+            </span>
+            <small class="tenue">Si el adoptante no responde en este tiempo, el caso pasa a la fundación.</small>
+          </label>
+
+          <label class="campo">
+            <span>Minutos sin reporte para «sin señal»</span>
+            <span class="con-unidad">
+              <input type="number" step="0.5" value="1.5" />
+              <span class="tenue">min</span>
+            </span>
+            <small class="tenue">Según el intervalo de reporte del collar (Traccar: status.timeout).</small>
+          </label>
+
+          <label class="campo">
+            <span>Error GPS de respaldo (p95)</span>
+            <span class="con-unidad">
+              <input type="number" step="1" value="30" />
+              <span class="tenue">m</span>
+            </span>
+            <small class="tenue">Se usa cuando el collar no reporta precisión. Valor final: medición en Cali (H3).</small>
+          </label>
+
+          <label class="interruptor">
+            <input type="checkbox" checked />
+            Usar histéresis (desactivar solo para comparar alertas con y sin histéresis)
+          </label>
+
+          <p class="tenue pequeno">
+            Regla de bienestar: el collar (≈ 71 g) no puede superar el 2 % del peso, así que solo se asigna a
+            animales de <span class="mono">3.55</span> kg o más.
+          </p>
+        </fieldset>
+
+        <button class="boton primario" type="button">Guardar</button>
+        <p class="exito">Parámetros guardados. El motor los usa desde la próxima evaluación.</p>
+      </form>
+    </main>
+  </div>
+
+  <script src="../tema.js"></script>
+</body>
+</html>

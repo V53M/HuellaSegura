@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HuellaSegura · Expediente de Luna</title>
+  <link rel="stylesheet" href="../base.css" />
+  <style>
+    .cabecera-panel { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-paw" viewBox="0 0 24 24" fill="currentColor">
+      <ellipse cx="7" cy="9.6" rx="2.1" ry="2.6" /><ellipse cx="11.3" cy="7.3" rx="2.1" ry="2.7" />
+      <ellipse cx="15.9" cy="7.7" rx="2.1" ry="2.7" /><ellipse cx="19.4" cy="11.3" rx="2" ry="2.5" />
+      <path d="M12 12.2c3 0 5.6 2.5 5.6 5.2 0 2-1.7 3.4-3.8 3.4-1 0-1.3-.4-1.8-.4s-.8.4-1.8.4c-2.1 0-3.8-1.4-3.8-3.4 0-2.7 2.6-5.2 5.6-5.2Z" />
+    </symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15" />
+      <path d="M10 8.5 6.5 12l3.5 3.5M6.5 12H16" />
+    </symbol>
+    <symbol id="i-bateria" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2.5" y="8" width="16.5" height="8.5" rx="2.5" /><path d="M21.5 11.3v2.8" />
+    </symbol>
+    <symbol id="i-alerta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3.5 2.7 20h18.6L12 3.5Z" /><path d="M12 10v4.2" /><path d="M12 17.4h.01" />
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12.5l4.5 4.5L19 7" />
+    </symbol>
+    <symbol id="i-mira" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <circle cx="12" cy="12" r="6.5" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+    </symbol>
+    <symbol id="i-lapiz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 20h4L20 8l-4-4L4 16v4Z" /><path d="M14.5 5.5l4 4" />
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <header class="barra">
+      <div class="marca">
+        <svg class="icono" width="22" height="22" aria-hidden="true"><use href="#i-paw" /></svg>
+        HuellaSegura
+      </div>
+      <nav class="pestanas">
+        <a href="dashboard.html">Inicio</a>
+        <a class="activa" href="seguimiento.html">Seguimiento</a>
+        <a href="alertas.html">Alertas <span class="insignia">2</span></a>
+        <a href="informes.html">Informes</a>
+        <a href="parametros.html">Parámetros</a>
+        <a href="usuarios.html">Usuarios</a>
+      </nav>
+      <div class="barra-derecha">
+        <span class="fundacion">Fundación de demostración</span>
+        <span class="separador"></span>
+        <span class="conexion ok">En vivo</span>
+        <span class="separador"></span>
+        <span class="usuario-actual"><span class="avatar">AP</span> Ana Pérez</span>
+        <button class="boton fantasma" title="Cerrar sesión">
+          <svg class="icono" width="16" height="16" aria-hidden="true"><use href="#i-salir" /></svg> Salir
+        </button>
+      </div>
+    </header>
+
+    <div class="vista">
+      <!-- ===================== Panel: expediente ===================== -->
+      <aside class="lateral">
+        <div class="lateral-cabecera">
+          <div class="cabecera-panel" style="width:100%">
+            <a class="boton fantasma" href="seguimiento.html">&larr; Volver</a>
+            <div class="grupo-botones">
+              <button class="boton" type="button">
+                <svg class="icono" width="14" height="14" aria-hidden="true"><use href="#i-mira" /></svg> Centrar
+              </button>
+              <a class="boton" href="zona.html">
+                <svg class="icono" width="14" height="14" aria-hidden="true"><use href="#i-lapiz" /></svg> Editar zona
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado actual -->
+        <div class="bloque">
+          <h2 class="titulo-animal">
+            <svg class="icono" width="20" height="20" aria-hidden="true"><use href="#i-paw" /></svg> Luna
+          </h2>
+          <div class="estado-grande" style="margin-top:9px">
+            <span class="estado" style="--c:var(--estado-escalada);--t:var(--plum-11)">
+              <span class="estado-punto"></span> Escalada a la fundación
+            </span>
+            <span class="tenue pequeno">
+              desde <span class="mono">20/11/2026 10:45:15</span> · <span class="mono">9 min</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Alerta abierta -->
+        <div class="bloque">
+          <div class="caja-alerta escalada">
+            <strong>
+              <svg class="icono" width="16" height="16" aria-hidden="true"><use href="#i-alerta" /></svg>
+              Caso escalado a la fundación
+            </strong>
+            <p class="pequeno">
+              Creada <span class="mono">hace 12 min</span>. Fuera de la zona desde
+              <span class="mono">20/11/2026 10:39:02</span>.
+            </p>
+            <div class="acciones-alerta">
+              <button class="boton" type="button">Registrar respuesta (llamada)</button>
+              <div class="fila-form">
+                <select>
+                  <option>Verificación telefónica…</option>
+                  <option>Verdadera (el animal estaba en riesgo)</option>
+                  <option>Falso positivo: salida legítima</option>
+                  <option>Falso positivo: error de posición</option>
+                </select>
+                <button class="boton primario" type="button">Cerrar caso</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos del caso -->
+        <div class="bloque">
+          <dl class="datos-ficha">
+            <div><dt>Distancia al centro</dt><dd><span class="mono">148 m</span> <span class="tenue mono">/ 120 m</span></dd></div>
+            <div><dt>Último reporte</dt><dd class="mono">hace 12 s</dd></div>
+            <div><dt>Batería</dt><dd><span class="bateria baja"><svg class="icono" width="14" height="14" aria-hidden="true"><use href="#i-bateria" /></svg><span class="mono">14 %</span></span></dd></div>
+            <div><dt>Precisión</dt><dd class="mono">8 m</dd></div>
+            <div><dt>Collar</dt><dd class="mono">sim-001</dd></div>
+            <div><dt>Peso</dt><dd><span class="mono">12.5</span> kg</dd></div>
+            <div><dt>Adoptante</dt><dd>Adoptante de prueba 1<br /><span class="tenue pequeno">300 000 0000 · Barrio San Antonio, Cali</span></dd></div>
+            <div><dt>Entregado</dt><dd class="mono">18/11/2026</dd></div>
+          </dl>
+        </div>
+
+        <!-- Excepción -->
+        <div class="bloque">
+          <h3>Excepción declarada</h3>
+          <p class="tenue pequeno" style="margin:0 0 9px">Ninguna vigente.</p>
+          <form class="fila-form">
+            <select>
+              <option>Paseo</option>
+              <option>Veterinaria</option>
+              <option>Viaje</option>
+            </select>
+            <select>
+              <option>5 min</option>
+              <option>30 min</option>
+              <option selected>1 hora</option>
+              <option>3 horas</option>
+              <option>1 día</option>
+            </select>
+            <button class="boton" type="button">Declarar</button>
+          </form>
+          <p class="tenue pequeno" style="margin:9px 0 0">Para salidas que el adoptante avisó por teléfono. Desde la app la declara él mismo.</p>
+        </div>
+
+        <!-- Consentimiento y acceso -->
+        <div class="bloque">
+          <h3>Datos personales (Ley 1581)</h3>
+          <p class="vigente">
+            <svg class="icono" width="15" height="15" aria-hidden="true"><use href="#i-check" /></svg>
+            <span>Autorización vigente · Formato firmado el <span class="mono">18/11/2026 09:30</span><span class="tenue"> · Semilla de demostración</span></span>
+          </p>
+          <div class="grupo-botones" style="margin-bottom:16px">
+            <button class="boton" type="button">Registrar revocación</button>
+          </div>
+
+          <h3>Acceso a la app</h3>
+          <p class="pequeno" style="margin:0 0 9px">
+            <span class="mono">adoptante1@demo.huellasegura.co</span>
+            <span class="tenue">· último ingreso hace 2 días</span>
+          </p>
+          <form class="fila-form">
+            <input type="email" value="adoptante1@demo.huellasegura.co" aria-label="Correo del adoptante" />
+            <input type="text" placeholder="Contraseña temporal" aria-label="Contraseña temporal" />
+            <button class="boton" type="button">Restablecer</button>
+          </form>
+        </div>
+
+        <!-- Recorrido -->
+        <div class="bloque">
+          <div class="seccion-cabecera">
+            <h3>Recorrido en el mapa</h3>
+            <select aria-label="Periodo del recorrido">
+              <option>Última hora</option>
+              <option selected>Últimas 6 h</option>
+              <option>Últimas 24 h</option>
+              <option>Últimos 7 días</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bitácora -->
+        <div class="bloque">
+          <h3>Bitácora de estados</h3>
+          <ol class="bitacora">
+            <li>
+              <span class="bitacora-hora">10:45:15</span>
+              <span class="bitacora-cambio">
+                <span class="pastilla alerta"><span class="estado-punto"></span>Alerta</span>
+                <span class="flecha">&rarr;</span>
+                <span class="pastilla escalada"><span class="estado-punto"></span>Escalada</span>
+              </span>
+              <span class="pequeno tenue">El adoptante no respondió a tiempo</span>
+            </li>
+            <li>
+              <span class="bitacora-hora">10:42:15</span>
+              <span class="bitacora-cambio">
+                <span class="pastilla gracia"><span class="estado-punto"></span>Fuera (gracia)</span>
+                <span class="flecha">&rarr;</span>
+                <span class="pastilla alerta"><span class="estado-punto"></span>Alerta</span>
+              </span>
+              <span class="pequeno tenue">Superó el umbral de permanencia</span>
+            </li>
+            <li>
+              <span class="bitacora-hora">10:39:02</span>
+              <span class="bitacora-cambio">
+                <span class="pastilla dentro"><span class="estado-punto"></span>Dentro</span>
+                <span class="flecha">&rarr;</span>
+                <span class="pastilla gracia"><span class="estado-punto"></span>Fuera (gracia)</span>
+              </span>
+              <span class="pequeno tenue">Salió de la zona segura</span>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Excepciones previas -->
+        <div class="bloque">
+          <h3>Excepciones declaradas</h3>
+          <ul class="simple pequeno">
+            <li>Paseo: <span class="mono">19/11/2026 15:00:00 &rarr; 19/11/2026 16:00:00</span></li>
+            <li>Veterinaria: <span class="mono">17/11/2026 08:30:00 &rarr; 17/11/2026 10:00:00</span></li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- ===================== Mapa ===================== -->
+      <div class="mapa" role="img" aria-label="Mapa con la zona segura y el recorrido de Luna">
+        <div class="mapa-parque" style="left:7%; top:14%; width:21%; height:25%"></div>
+        <div class="mapa-parque" style="left:69%; top:64%; width:19%; height:23%"></div>
+        <div class="mapa-agua" style="left:-5%; top:76%; width:27%; height:32%"></div>
+
+        <svg class="mapa-traza" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M70 18 L63 25 L57 30 L52 34 L48 38 L46 44" fill="none"
+                stroke="rgb(255 255 255 / .8)" stroke-width="5" vector-effect="non-scaling-stroke"
+                stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M70 18 L63 25 L57 30 L52 34 L48 38 L46 44" fill="none"
+                stroke="#6166eb" stroke-width="2.5" vector-effect="non-scaling-stroke"
+                stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+
+        <div class="zona-circulo" style="left:46%; top:44%"></div>
+
+        <button class="marcador seleccionado" data-estado="ESCALADA" style="left:46%; top:44%">
+          <span class="punto"><svg width="15" height="15" aria-hidden="true"><use href="#i-paw" /></svg></span>
+          <span class="nombre">Luna</span>
+        </button>
+        <button class="marcador" data-estado="ALERTA" style="left:64%; top:62%">
+          <span class="punto"><svg width="15" height="15" aria-hidden="true"><use href="#i-paw" /></svg></span>
+          <span class="nombre">Rocco</span>
+        </button>
+        <button class="marcador" data-estado="SIN_SEÑAL" style="left:26%; top:38%">
+          <span class="punto"><svg width="15" height="15" aria-hidden="true"><use href="#i-paw" /></svg></span>
+          <span class="nombre">Otto</span>
+        </button>
+        <button class="marcador" data-estado="EXCEPCION" style="left:60%; top:26%">
+          <span class="punto"><svg width="15" height="15" aria-hidden="true"><use href="#i-paw" /></svg></span>
+          <span class="nombre">Tomás</span>
+        </button>
+
+        <div class="mapa-leyenda">
+          <span class="l"><span class="pt" style="--c:var(--estado-dentro)"></span>Dentro</span>
+          <span class="l"><span class="pt" style="--c:var(--estado-gracia)"></span>Fuera (gracia)</span>
+          <span class="l"><span class="pt" style="--c:var(--estado-excepcion)"></span>Excepción</span>
+          <span class="l"><span class="pt" style="--c:var(--estado-alerta)"></span>Alerta</span>
+          <span class="l"><span class="pt" style="--c:var(--estado-escalada)"></span>Escalada</span>
+          <span class="l"><span class="pt" style="--c:var(--estado-sinsenal)"></span>Sin señal</span>
+        </div>
+
+        <div class="mapa-ctrl">
+          <button type="button" aria-label="Acercar">+</button>
+          <button type="button" aria-label="Alejar">&minus;</button>
+        </div>
+
+        <div class="mapa-inferior">
+          <div class="mapa-escala">200 m</div>
+          <div class="mapa-creditos">&copy; OpenStreetMap &middot; &copy; CARTO</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../tema.js"></script>
+</body>
+</html>

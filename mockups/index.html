@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HuellaSegura · Mockups</title>
+  <link rel="stylesheet" href="base.css" />
+  <style>
+    .indice { max-width: 1040px; }
+    .hero { margin-bottom: 28px; }
+    .hero h1 { margin-bottom: 8px; }
+    .leyenda { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--tenue); }
+    .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+    .punto { width: 9px; height: 9px; border-radius: 50%; }
+    .punto.listo { background: var(--estado-dentro); }
+    .punto.pend { background: var(--slate-6); }
+    .grupo { margin-bottom: 28px; }
+    .grupo > h3 { margin-bottom: 12px; }
+    .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .ficha {
+      display: flex; flex-direction: column; gap: 8px; padding: 16px 18px;
+      background: var(--superficie); border: 1px solid var(--borde-suave);
+      border-radius: var(--radio); box-shadow: var(--sombra-1);
+      transition: transform 0.12s, box-shadow 0.12s; color: inherit;
+    }
+    a.ficha:hover { transform: translateY(-2px); box-shadow: var(--sombra-2); }
+    a.ficha:has(.pend) { opacity: 0.55; pointer-events: none; }
+    .ficha .t { font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ficha .d { font-size: 13px; color: var(--tenue); }
+    .etiqueta { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 2px 8px; border-radius: 999px; }
+    .etiqueta.listo { background: var(--exito-suave); color: var(--exito); }
+    .etiqueta.pend { background: var(--superficie-3); color: var(--tenue); }
+    .etiqueta.nuevo { background: var(--primario-suave); color: var(--primario); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="barra">
+      <div class="marca">
+        <span class="icono">&#128062;</span>
+        HuellaSegura <span class="detalle">· Mockups</span>
+      </div>
+      <div class="barra-derecha">
+        <span class="conexion ok">Borradores de diseño</span>
+      </div>
+    </header>
+
+    <main class="pagina indice">
+      <section class="hero">
+        <h1>Mockups de la plataforma</h1>
+        <p class="tenue" style="margin-top:6px">
+          Prototipos HTML/CSS navegables. Evolucionan el estilo actual (Radix slate + indigo, Inter,
+          IBM Plex Mono) con más profundidad y jerarquía. Se revisan aquí y, una vez aprobados,
+          se implementan en la app React.
+        </p>
+        <div class="leyenda">
+          <span><i class="punto listo"></i> Listo para revisar</span>
+          <span><i class="punto pend"></i> Pendiente</span>
+          <span>· El botón flotante alterna tema claro/oscuro.</span>
+        </div>
+      </section>
+
+      <section class="grupo">
+        <h3>Web · Fundación</h3>
+        <div class="galeria">
+          <a class="ficha" href="web/dashboard.html">
+            <span class="t">Inicio (Dashboard) <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Resumen de estados, alertas abiertas, actividad y latencia de alerta.</span>
+          </a>
+          <a class="ficha" href="web/seguimiento.html">
+            <span class="t">Seguimiento <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Mapa en vivo + lista de casos con estados y últimos reportes.</span>
+          </a>
+          <a class="ficha" href="web/expediente.html">
+            <span class="t">Expediente <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Detalle del animal: recorrido, umbral, excepciones y bitácora.</span>
+          </a>
+          <a class="ficha" href="web/alertas.html">
+            <span class="t">Bandeja de alertas <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Alertas abiertas/cerradas, entregas y métricas de latencia.</span>
+          </a>
+          <a class="ficha" href="web/nueva-adopcion.html">
+            <span class="t">Nueva adopción <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Alta de animal, adoptante, consentimiento y zona segura.</span>
+          </a>
+          <a class="ficha" href="web/zona.html">
+            <span class="t">Editor de zona <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Centro por dirección o mapa y radio con control deslizante.</span>
+          </a>
+          <a class="ficha" href="web/informes.html">
+            <span class="t">Informes <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Exportes CSV, resumen de actividad y cumplimiento (OE5).</span>
+          </a>
+          <a class="ficha" href="web/consentimiento.html">
+            <span class="t">Consentimiento <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Autorizaciones Ley 1581 por adoptante, con estado y revocación.</span>
+          </a>
+          <a class="ficha" href="web/parametros.html">
+            <span class="t">Parámetros <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Umbrales, escalada, sin señal y política de privacidad.</span>
+          </a>
+          <a class="ficha" href="web/usuarios.html">
+            <span class="t">Usuarios <span class="etiqueta listo">Listo</span></span>
+            <span class="d">Cuentas de la fundación, roles y altas/bajas.</span>
+          </a>
+          <a class="ficha" href="web/ingreso.html">
+            <span class="t">Inicio de sesión <span class="etiqueta pend">Pendiente</span></span>
+            <span class="d">Acceso del personal de la fundación.</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="grupo">
+        <h3>Móvil · Adoptante (app)</h3>
+        <div class="galeria">
+          <a class="ficha" href="movil/ingreso.html">
+            <span class="t">Ingreso <span class="etiqueta pend">Pendiente</span></span>
+            <span class="d">Inicio de sesión del adoptante.</span>
+          </a>
+          <a class="ficha" href="movil/animales.html">
+            <span class="t">Mis animales <span class="etiqueta pend">Pendiente</span></span>
+            <span class="d">Estado, zona, última posición y alerta abierta.</span>
+          </a>
+          <a class="ficha" href="movil/excepcion.html">
+            <span class="t">Declarar excepción <span class="etiqueta pend">Pendiente</span></span>
+            <span class="d">Paseo, veterinaria o viaje con duración.</span>
+          </a>
+          <a class="ficha" href="movil/respuesta.html">
+            <span class="t">Responder alerta <span class="etiqueta pend">Pendiente</span></span>
+            <span class="d">Respuesta del adoptante a una alerta.</span>
+          </a>
+          <a class="ficha" href="movil/consentimiento.html">
+            <span class="t">Consentimiento <span class="etiqueta pend">Pendiente</span></span>
+            <span class="d">Ver, aceptar o revocar la política de datos.</span>
+          </a>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="tema.js"></script>
+</body>
+</html>
