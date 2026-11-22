@@ -339,6 +339,12 @@ fieldset.sin-borde { border: 0; padding: 0; margin: 0; display: flex; flex-direc
 .fila-derecha { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .vacio { color: var(--tenue); padding: 28px 18px; text-align: center; }
 
+/* Lista de cuentas de la fundación (usuarios) */
+.lista-usuarios { list-style: none; margin: 0 0 16px; padding: 0; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--superficie); }
+.lista-usuarios li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; }
+.lista-usuarios li + li { border-top: 1px solid var(--borde-suave); }
+.lista-usuarios li.inactivo { color: var(--muy-tenue); }
+
 /* Avatar de animal */
 .avatar-animal {
   width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none;
